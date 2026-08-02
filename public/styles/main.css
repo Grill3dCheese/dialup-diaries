@@ -466,6 +466,39 @@ input:focus, textarea:focus { border-color: var(--purple); outline: 0; box-shado
 .input-wrap input { border: 0; }
 .input-wrap:focus-within { border-color: var(--purple); box-shadow: 0 0 0 3px rgba(102,82,163,.15); }
 .input-wrap input:focus { box-shadow: none; }
+.username-suggestions {
+  padding: 12px;
+  border: 1px dashed var(--purple);
+  border-radius: 6px;
+  background:
+    linear-gradient(135deg, rgba(102, 82, 163, .06) 25%, transparent 25%) 0 0 / 8px 8px,
+    #fbf8ff;
+  text-align: center;
+}
+.username-suggestions__title {
+  color: var(--purple);
+  font-family: "Courier New", monospace;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .08em;
+}
+.username-suggestions p { margin: 4px 0 9px; color: var(--muted); font-size: 9px; }
+.username-suggestions > div { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
+.username-suggestions button {
+  border: 1px solid #b9add8;
+  border-radius: 999px;
+  padding: 4px 8px;
+  background: white;
+  color: var(--purple);
+  font-family: "Courier New", monospace;
+  font-size: 9px;
+  font-weight: 700;
+}
+.username-suggestions button:hover {
+  border-color: var(--purple);
+  background: var(--purple);
+  color: white;
+}
 .auth-switch { margin: 0; color: var(--muted); font-size: 10px; text-align: center; }
 .auth-switch a { color: var(--teal-dark); font-weight: 700; }
 

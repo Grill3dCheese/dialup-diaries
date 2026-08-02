@@ -1,7 +1,12 @@
 import { randomBytes } from "node:crypto";
 import { Router } from "express";
 import { rateLimit } from "express-rate-limit";
-import { authenticateUser, createUser } from "../services/auth.js";
+import {
+  authenticateUser,
+  createUser,
+  getAvailableUsernameSuggestions,
+} from "../services/auth.js";
+import { isUsernameConflict } from "../utils/database-errors.js";
 import { firstError, loginSchema, registerSchema } from "../utils/validation.js";
 
 export const authRouter = Router();
@@ -16,7 +21,12 @@ const authLimiter = rateLimit({
 
 authRouter.get("/register", (req, res) => {
   if (req.currentUser) return res.redirect(303, "/");
-  return res.render("auth/register", { title: "Join the web", values: {}, error: null });
+  return res.render("auth/register", {
+    title: "Join the web",
+    values: {},
+    error: null,
+    suggestions: [],
+  });
 });
 
 authRouter.post("/register", authLimiter, async (req, res) => {
@@ -29,6 +39,7 @@ authRouter.post("/register", authLimiter, async (req, res) => {
         displayName: bodyString(req.body, "displayName"),
       },
       error: firstError(parsed.error),
+      suggestions: [],
     });
   }
 
@@ -39,11 +50,16 @@ authRouter.post("/register", authLimiter, async (req, res) => {
     req.session.flash = { kind: "success", message: "Your corner of the web is live!" };
     return res.redirect(303, "/");
   } catch (error) {
-    if ((error as { code?: string }).code === "23505") {
+    if (isUsernameConflict(error)) {
+      const suggestions = await getAvailableUsernameSuggestions(parsed.data.username);
       return res.status(409).render("auth/register", {
         title: "Join the web",
-        values: parsed.data,
-        error: "That username is already taken.",
+        values: {
+          username: parsed.data.username,
+          displayName: parsed.data.displayName,
+        },
+        error: "That screen name is already broadcasting from somewhere else.",
+        suggestions,
       });
     }
     throw error;

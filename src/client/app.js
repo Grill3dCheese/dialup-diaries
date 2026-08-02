@@ -4,6 +4,19 @@ const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matc
 const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content ?? "";
 
 document.addEventListener("click", async (event) => {
+  const usernameSuggestion = event.target.closest("[data-username-suggestion]");
+  if (usernameSuggestion) {
+    const usernameInput = document.querySelector("[data-username-input]");
+    if (!usernameInput) return;
+    usernameInput.value = usernameSuggestion.dataset.usernameSuggestion ?? "";
+    usernameInput.focus();
+    usernameInput.setSelectionRange(usernameInput.value.length, usernameInput.value.length);
+    if (!reducedMotion) {
+      animate(usernameInput.closest(".input-wrap"), { scale: [1, 1.025, 1] }, { duration: 0.24 });
+    }
+    return;
+  }
+
   const readMore = event.target.closest(".read-more");
   if (readMore) {
     const container = readMore.closest("[data-expandable]");

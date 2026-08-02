@@ -73,6 +73,7 @@ describe("server-rendered pages", () => {
         title: "Register",
         values: {},
         error: null,
+        suggestions: ["pixelpoet123", "pixel_poet"],
       }),
       render("errors/error.ejs", {
         ...common,

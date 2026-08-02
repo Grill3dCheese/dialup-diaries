@@ -24,8 +24,19 @@
         <input name="displayName" value="<%= values.displayName ?? '' %>" autocomplete="name" maxlength="50" required autofocus>
       </label>
       <label>Username
-        <span class="input-wrap"><span>@</span><input name="username" value="<%= values.username ?? '' %>" autocomplete="username" minlength="3" maxlength="24" pattern="[A-Za-z0-9_]+" required></span>
+        <span class="input-wrap"><span>@</span><input name="username" value="<%= values.username ?? '' %>" autocomplete="username" minlength="3" maxlength="24" pattern="[A-Za-z0-9_]+" required data-username-input></span>
       </label>
+      <% if (suggestions.length) { %>
+        <div class="username-suggestions" role="status">
+          <span class="username-suggestions__title">✦ SCREEN NAME GENERATOR ✦</span>
+          <p>The good ones travel fast. Want to try one of these instead?</p>
+          <div>
+            <% suggestions.forEach((suggestion) => { %>
+              <button type="button" data-username-suggestion="<%= suggestion %>">@<%= suggestion %></button>
+            <% }) %>
+          </div>
+        </div>
+      <% } %>
       <label>Password
         <input type="password" name="password" autocomplete="new-password" minlength="12" maxlength="128" required>
         <small>12+ characters with uppercase, lowercase, and a number.</small>

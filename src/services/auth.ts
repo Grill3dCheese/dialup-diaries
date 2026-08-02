@@ -1,7 +1,8 @@
 import { hash, verify } from "@node-rs/argon2";
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { users } from "../db/schema.js";
+import { buildUsernameCandidates } from "../utils/usernames.js";
 
 const hashOptions = {
   memoryCost: 19_456,
@@ -64,4 +65,17 @@ export async function findSafeUserById(id: string) {
     .limit(1);
 
   return user ?? null;
+}
+
+export async function getAvailableUsernameSuggestions(username: string) {
+  const candidates = buildUsernameCandidates(username);
+  if (candidates.length === 0) return [];
+
+  const unavailable = await db
+    .select({ username: users.username })
+    .from(users)
+    .where(inArray(users.username, candidates));
+  const unavailableNames = new Set(unavailable.map((user) => user.username));
+
+  return candidates.filter((candidate) => !unavailableNames.has(candidate)).slice(0, 6);
 }
