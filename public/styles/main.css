@@ -260,7 +260,7 @@ input:focus, textarea:focus { border-color: var(--purple); outline: 0; box-shado
 /* Sidebars */
 .profile-chip__body { display: grid; grid-template-columns: auto 1fr; gap: 10px; padding: 16px; }
 .profile-chip__body > div { min-width: 0; }
-.profile-chip__body strong, .profile-chip__body a { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.profile-chip__body strong, .profile-chip__body a { display: grid; text-overflow: ellipsis; white-space: nowrap; }
 .profile-chip__body > div a { color: var(--muted); font-size: 10px; text-decoration: none; }
 .profile-chip__body p, .profile-chip__body > .text-link { grid-column: 1 / -1; margin: 0; }
 .profile-chip__body p { color: var(--muted); font-family: Georgia, serif; font-size: 12px; line-height: 1.5; }
