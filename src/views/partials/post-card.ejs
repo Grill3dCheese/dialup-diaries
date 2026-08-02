@@ -1,0 +1,77 @@
+<%
+  const uniqueCardId = `${post.id}-${typeof cardIndex !== 'undefined' ? cardIndex : 'detail'}`;
+  const shouldTruncate = !(typeof showFull !== 'undefined' && showFull) && post.content.length > 420;
+%>
+<article class="post-card <%= post.reposterUsername ? 'post-card--repost' : '' %>" id="<%= uniqueCardId %>">
+  <% if (post.reposterUsername) { %>
+    <div class="repost-note">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m17 1 4 4-4 4M3 11V9a4 4 0 0 1 4-4h14M7 23l-4-4 4-4m14-2v2a4 4 0 0 1-4 4H3"/></svg>
+      <a href="/u/<%= post.reposterUsername %>"><%= post.reposterDisplayName %></a> passed this along
+    </div>
+  <% } %>
+  <div class="post-main">
+    <a class="avatar" href="/u/<%= post.authorUsername %>" aria-label="<%= post.authorDisplayName %>'s profile">
+      <span><%= initials(post.authorDisplayName) %></span>
+      <i aria-hidden="true"></i>
+    </a>
+    <div class="post-body">
+      <header class="post-meta">
+        <div>
+          <a class="display-name" href="/u/<%= post.authorUsername %>"><%= post.authorDisplayName %></a>
+          <a class="username" href="/u/<%= post.authorUsername %>">@<%= post.authorUsername %></a>
+        </div>
+        <a class="post-time" href="/posts/<%= post.id %>"><%= formatDate(post.createdAt) %></a>
+      </header>
+
+      <div class="post-content" data-expandable>
+        <% if (shouldTruncate) { %>
+          <span data-short><%= post.content.slice(0, 420).trimEnd() %>…</span>
+          <span data-full hidden><%= post.content %></span>
+          <button class="read-more" type="button" aria-expanded="false">Read the rest</button>
+        <% } else { %>
+          <span><%= post.content %></span>
+        <% } %>
+      </div>
+
+      <footer class="post-actions" aria-label="Post actions">
+        <a class="action action--comment" href="/posts/<%= post.id %>#comments" aria-label="<%= post.commentCount %> comments">
+          <span class="action-icon">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4Z"/></svg>
+          </span>
+          <span class="action-count"><%= post.commentCount %></span>
+          <span class="action-label">Reply</span>
+        </a>
+
+        <% if (currentUser) { %>
+          <button class="action action--repost <%= post.repostedByViewer ? 'is-active' : '' %>" type="button"
+            data-reaction="repost" data-post-id="<%= post.id %>" aria-pressed="<%= post.repostedByViewer %>"
+            aria-label="<%= post.repostCount %> reposts">
+            <span class="action-icon">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m17 1 4 4-4 4M3 11V9a4 4 0 0 1 4-4h14M7 23l-4-4 4-4m14-2v2a4 4 0 0 1-4 4H3"/></svg>
+            </span>
+            <span class="action-count"><%= post.repostCount %></span>
+            <span class="action-label">Repost</span>
+          </button>
+          <button class="action action--like <%= post.likedByViewer ? 'is-active' : '' %>" type="button"
+            data-reaction="like" data-post-id="<%= post.id %>" aria-pressed="<%= post.likedByViewer %>"
+            aria-label="<%= post.likeCount %> likes">
+            <span class="action-icon">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1.1L12 21l7.8-7.5 1.1-1.1a5.5 5.5 0 0 0-.1-7.8Z"/></svg>
+            </span>
+            <span class="action-count"><%= post.likeCount %></span>
+            <span class="action-label">Like</span>
+          </button>
+        <% } else { %>
+          <a class="action action--repost" href="/login" aria-label="Sign in to repost">
+            <span class="action-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m17 1 4 4-4 4M3 11V9a4 4 0 0 1 4-4h14M7 23l-4-4 4-4m14-2v2a4 4 0 0 1-4 4H3"/></svg></span>
+            <span class="action-count"><%= post.repostCount %></span><span class="action-label">Repost</span>
+          </a>
+          <a class="action action--like" href="/login" aria-label="Sign in to like">
+            <span class="action-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1.1L12 21l7.8-7.5 1.1-1.1a5.5 5.5 0 0 0-.1-7.8Z"/></svg></span>
+            <span class="action-count"><%= post.likeCount %></span><span class="action-label">Like</span>
+          </a>
+        <% } %>
+      </footer>
+    </div>
+  </div>
+</article>

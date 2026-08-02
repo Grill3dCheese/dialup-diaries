@@ -1,0 +1,45 @@
+<%- include('../partials/head') %>
+<main id="main" class="profile-page">
+  <section class="profile-hero">
+    <div class="profile-hero__pattern" aria-hidden="true"><span>✦</span><span>☺</span><span>♥</span><span>✎</span></div>
+    <div class="profile-hero__content">
+      <div class="avatar avatar--hero"><span><%= initials(user.displayName) %></span><i aria-hidden="true"></i></div>
+      <div>
+        <span class="eyebrow">PERSONAL HOMEPAGE OF</span>
+        <h1><%= user.displayName %></h1>
+        <a href="/u/<%= user.username %>">@<%= user.username %></a>
+      </div>
+      <div class="profile-since">ONLINE SINCE<br><strong><%= user.createdAt.getFullYear() %></strong></div>
+    </div>
+  </section>
+
+  <div class="profile-layout">
+    <aside>
+      <section class="about-card window-panel">
+        <div class="window-title"><span>about_me.txt</span><span>— □ ×</span></div>
+        <% if (currentUser && currentUser.id === user.id) { %>
+          <form action="/u/<%= user.username %>" method="post">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <label>Display name<input name="displayName" value="<%= user.displayName %>" maxlength="50" required></label>
+            <label>About me<textarea name="bio" maxlength="280" rows="5"><%= user.bio %></textarea></label>
+            <% if (error) { %><p class="form-error"><%= error %></p><% } %>
+            <button class="button button--small" type="submit">Save profile</button>
+          </form>
+        <% } else { %>
+          <div class="about-card__copy"><span class="eyebrow">ABOUT ME</span><p><%= user.bio %></p></div>
+        <% } %>
+      </section>
+      <div class="profile-stamp"><span>BEST VIEWED</span><strong>WITH AN OPEN MIND</strong><small>800 × 600 or better</small></div>
+    </aside>
+    <section class="profile-posts">
+      <div class="section-rule"><span>RECENT DIARY ENTRIES</span></div>
+      <% if (!posts.length) { %>
+        <div class="empty-state"><span>✎</span><p>No entries yet.</p></div>
+      <% } %>
+      <% posts.forEach((post, index) => { %>
+        <%- include('../partials/post-card', { post, cardIndex: index, showFull: false }) %>
+      <% }) %>
+    </section>
+  </div>
+</main>
+<%- include('../partials/footer') %>

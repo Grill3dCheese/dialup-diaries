@@ -1,0 +1,67 @@
+import { hash, verify } from "@node-rs/argon2";
+import { eq } from "drizzle-orm";
+import { db } from "../db/client.js";
+import { users } from "../db/schema.js";
+
+const hashOptions = {
+  memoryCost: 19_456,
+  timeCost: 2,
+  parallelism: 1,
+  outputLen: 32,
+} as const;
+
+export async function createUser(input: {
+  username: string;
+  displayName: string;
+  password: string;
+}) {
+  const passwordHash = await hash(input.password, hashOptions);
+  const [user] = await db
+    .insert(users)
+    .values({
+      username: input.username.toLowerCase(),
+      displayName: input.displayName,
+      passwordHash,
+    })
+    .returning({
+      id: users.id,
+      username: users.username,
+      displayName: users.displayName,
+      bio: users.bio,
+    });
+
+  if (!user) throw new Error("User creation did not return a record.");
+  return user;
+}
+
+export async function authenticateUser(username: string, password: string) {
+  const [user] = await db
+    .select()
+    .from(users)
+    .where(eq(users.username, username.toLowerCase()))
+    .limit(1);
+
+  if (!user || !(await verify(user.passwordHash, password))) return null;
+
+  return {
+    id: user.id,
+    username: user.username,
+    displayName: user.displayName,
+    bio: user.bio,
+  };
+}
+
+export async function findSafeUserById(id: string) {
+  const [user] = await db
+    .select({
+      id: users.id,
+      username: users.username,
+      displayName: users.displayName,
+      bio: users.bio,
+    })
+    .from(users)
+    .where(eq(users.id, id))
+    .limit(1);
+
+  return user ?? null;
+}

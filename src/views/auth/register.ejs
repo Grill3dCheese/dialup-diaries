@@ -1,0 +1,38 @@
+<%- include('../partials/head') %>
+<main id="main" class="auth-page">
+  <section class="auth-story">
+    <span class="eyebrow">EST. RIGHT NOW</span>
+    <h1>The web could use more of you.</h1>
+    <p>Create a page for half-formed thoughts, full-hearted recommendations, and everything between.</p>
+    <ul class="feature-list">
+      <li><span>✦</span> Longer posts without a noisy feed</li>
+      <li><span>♥</span> Likes, replies, and reposts</li>
+      <li><span>☻</span> A profile that feels like yours</li>
+    </ul>
+  </section>
+  <section class="auth-card window-panel">
+    <div class="window-title"><span>new_user_wizard.exe</span><span>— □ ×</span></div>
+    <form action="/register" method="post">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <div>
+        <span class="eyebrow">STEP 1 OF A GREAT IDEA</span>
+        <h2>Make your page</h2>
+        <p>No tracking pixels. No popularity contest.</p>
+      </div>
+      <% if (error) { %><div class="form-error form-error--box" role="alert"><%= error %></div><% } %>
+      <label>Display name
+        <input name="displayName" value="<%= values.displayName ?? '' %>" autocomplete="name" maxlength="50" required autofocus>
+      </label>
+      <label>Username
+        <span class="input-wrap"><span>@</span><input name="username" value="<%= values.username ?? '' %>" autocomplete="username" minlength="3" maxlength="24" pattern="[A-Za-z0-9_]+" required></span>
+      </label>
+      <label>Password
+        <input type="password" name="password" autocomplete="new-password" minlength="12" maxlength="128" required>
+        <small>12+ characters with uppercase, lowercase, and a number.</small>
+      </label>
+      <button class="button button--primary button--wide" type="submit">Create my corner <span aria-hidden="true">↗</span></button>
+      <p class="auth-switch">Already have a page? <a href="/login">Sign in</a></p>
+    </form>
+  </section>
+</main>
+<%- include('../partials/footer') %>

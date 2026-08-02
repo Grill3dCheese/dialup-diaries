@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Dialup Diaries — thoughtful posts, tiny joys, and your own corner of the web.">
+    <meta name="theme-color" content="#fff6d8">
+    <meta name="csrf-token" content="<%= csrfToken %>">
+    <title><%= title %> · Dialup Diaries</title>
+    <link rel="stylesheet" href="/styles/main.css">
+    <script type="module" src="/app.js"></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to the good stuff</a>
+    <div class="ambient-grid" aria-hidden="true"></div>
+    <header class="site-header">
+      <div class="header-inner">
+        <a class="brand" href="/" aria-label="Dialup Diaries home">
+          <span class="brand-orbit" aria-hidden="true">✦</span>
+          <span>
+            <strong>Dialup</strong>
+            <em>Diaries</em>
+          </span>
+        </a>
+        <nav class="main-nav" aria-label="Main navigation">
+          <a class="<%= path === '/' ? 'is-current' : '' %>" href="/">
+            <span aria-hidden="true">⌂</span> Timeline
+          </a>
+          <% if (currentUser) { %>
+            <a class="<%= path.startsWith('/u/') ? 'is-current' : '' %>" href="/u/<%= currentUser.username %>">
+              <span aria-hidden="true">☺</span> My page
+            </a>
+            <form action="/logout" method="post">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+              <button class="nav-button" type="submit">Sign out</button>
+            </form>
+          <% } else { %>
+            <a href="/login">Sign in</a>
+            <a class="nav-cta" href="/register">Make your page</a>
+          <% } %>
+        </nav>
+      </div>
+      <div class="status-strip">
+        <span class="status-led" aria-hidden="true"></span>
+        <span>CONNECTED AT 56K</span>
+        <span aria-hidden="true">·</span>
+        <span>YOU'VE GOT GOOD IDEAS</span>
+        <span class="status-time"><%= new Date().toLocaleDateString('en', { weekday: 'long', month: 'short', day: 'numeric' }) %></span>
+      </div>
+    </header>
+
+    <% if (flash) { %>
+      <div class="flash flash--<%= flash.kind %>" role="status" data-flash>
+        <span><%= flash.kind === 'success' ? '✦' : '!' %></span>
+        <%= flash.message %>
+        <button type="button" aria-label="Dismiss message" data-dismiss>×</button>
+      </div>
+    <% } %>

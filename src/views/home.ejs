@@ -1,0 +1,102 @@
+<%- include('partials/head') %>
+
+<main id="main" class="page-shell">
+  <aside class="sidebar sidebar--left" aria-label="Your space">
+    <% if (currentUser) { %>
+      <section class="profile-chip window-panel">
+        <div class="window-title"><span>my_page.exe</span><span>— □ ×</span></div>
+        <div class="profile-chip__body">
+          <a class="avatar avatar--large" href="/u/<%= currentUser.username %>">
+            <span><%= initials(currentUser.displayName) %></span><i aria-hidden="true"></i>
+          </a>
+          <div>
+            <strong><%= currentUser.displayName %></strong>
+            <a href="/u/<%= currentUser.username %>">@<%= currentUser.username %></a>
+          </div>
+          <p><%= currentUser.bio %></p>
+          <a class="text-link" href="/u/<%= currentUser.username %>">Customize my page →</a>
+        </div>
+      </section>
+    <% } else { %>
+      <section class="welcome-card">
+        <span class="eyebrow">Your web. Your words.</span>
+        <h2>Make the internet feel personal again.</h2>
+        <p>A cozy place for big thoughts, tiny updates, and the people who get it.</p>
+        <a class="button button--primary" href="/register">Claim your corner</a>
+        <a class="text-link" href="/login">I already live here →</a>
+      </section>
+    <% } %>
+
+    <section class="mood-card">
+      <span class="mood-card__label">CURRENT INTERNET MOOD</span>
+      <div><span aria-hidden="true">☻</span> cautiously optimistic</div>
+      <small>updated 2 minutes ago</small>
+    </section>
+  </aside>
+
+  <section class="timeline" aria-labelledby="timeline-heading">
+    <div class="timeline-heading">
+      <div>
+        <span class="eyebrow">THE WORLD WIDE WEB</span>
+        <h1 id="timeline-heading">Today on the timeline</h1>
+      </div>
+      <span class="live-pill"><i></i> LIVE</span>
+    </div>
+
+    <% if (currentUser) { %>
+      <form class="composer" action="/posts" method="post">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <a class="avatar" href="/u/<%= currentUser.username %>" tabindex="-1">
+          <span><%= initials(currentUser.displayName) %></span><i aria-hidden="true"></i>
+        </a>
+        <div class="composer__body">
+          <label for="content">What's happening in your corner?</label>
+          <textarea id="content" name="content" rows="3" maxlength="5000" required
+            placeholder="Share a thought, a tiny victory, or a link worth keeping…" data-composer></textarea>
+          <% if (composeError) { %><p class="form-error"><%= composeError %></p><% } %>
+          <div class="composer__footer">
+            <span><span aria-hidden="true">✎</span> Plain text. Real feelings.</span>
+            <span class="character-count" data-character-count>0 / 5,000</span>
+            <button class="button button--primary" type="submit">Publish post <span aria-hidden="true">↗</span></button>
+          </div>
+        </div>
+      </form>
+    <% } %>
+
+    <div class="feed" data-feed>
+      <% if (posts.length === 0) { %>
+        <div class="empty-state">
+          <span aria-hidden="true">✦</span>
+          <h2>It's quiet on the web.</h2>
+          <p>Be the first to leave a little piece of yourself here.</p>
+        </div>
+      <% } %>
+      <% posts.forEach((post, index) => { %>
+        <%- include('partials/post-card', { post, cardIndex: index, showFull: false }) %>
+      <% }) %>
+    </div>
+  </section>
+
+  <aside class="sidebar sidebar--right" aria-label="Around the web">
+    <section class="bulletin">
+      <div class="bulletin__tape" aria-hidden="true"></div>
+      <span class="eyebrow">WEBMASTER'S NOTE</span>
+      <p>“The internet is at its best when it feels like someone made a place just for you.”</p>
+      <small>— posted from the basement</small>
+    </section>
+    <section class="web-ring">
+      <h2><span aria-hidden="true">✧</span> Explore the web ring</h2>
+      <ul>
+        <li><span>01</span><div><strong>Night Owls</strong><small>late thoughts & soft lamps</small></div></li>
+        <li><span>02</span><div><strong>Good News Dept.</strong><small>small wins, daily</small></div></li>
+        <li><span>03</span><div><strong>Link Hoarders</strong><small>the good bookmarks</small></div></li>
+      </ul>
+    </section>
+    <div class="visitor-counter">
+      <span>YOU ARE VISITOR</span>
+      <strong>0 0 1 9 9 4</strong>
+    </div>
+  </aside>
+</main>
+
+<%- include('partials/footer') %>

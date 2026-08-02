@@ -1,0 +1,33 @@
+<%- include('../partials/head') %>
+<main id="main" class="auth-page">
+  <section class="auth-story">
+    <span class="eyebrow">WELCOME HOME</span>
+    <h1>Your corner of the internet missed you.</h1>
+    <p>Sign in to catch up, pass along something good, and add another page to your diary.</p>
+    <div class="auth-art" aria-hidden="true">
+      <div class="auth-art__sun">✦</div>
+      <div class="auth-art__window"><span>dialup://home</span><i></i><i></i><i></i></div>
+    </div>
+  </section>
+  <section class="auth-card window-panel">
+    <div class="window-title"><span>sign_in.exe</span><span>— □ ×</span></div>
+    <form action="/login" method="post">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <div>
+        <span class="eyebrow">MEMBER ACCESS</span>
+        <h2>Welcome back</h2>
+        <p>Good to see you again.</p>
+      </div>
+      <% if (error) { %><div class="form-error form-error--box" role="alert"><%= error %></div><% } %>
+      <label>Username
+        <span class="input-wrap"><span>@</span><input name="username" value="<%= values.username ?? '' %>" autocomplete="username" maxlength="24" required autofocus></span>
+      </label>
+      <label>Password
+        <input type="password" name="password" autocomplete="current-password" maxlength="128" required>
+      </label>
+      <button class="button button--primary button--wide" type="submit">Connect to my page <span aria-hidden="true">→</span></button>
+      <p class="auth-switch">New around here? <a href="/register">Make your page</a></p>
+    </form>
+  </section>
+</main>
+<%- include('../partials/footer') %>

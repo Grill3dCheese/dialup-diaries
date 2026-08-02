@@ -1,0 +1,16 @@
+<%- include('../partials/head') %>
+<main id="main" class="error-page">
+  <div class="error-window window-panel">
+    <div class="window-title"><span>internet_explorer</span><span>— □ ×</span></div>
+    <div class="error-window__body">
+      <span class="error-code"><%= status %></span>
+      <div>
+        <span class="eyebrow">WHOOPS.HTML</span>
+        <h1><%= title %></h1>
+        <p><%= message %></p>
+        <a class="button button--primary" href="/">Return to the timeline</a>
+      </div>
+    </div>
+  </div>
+</main>
+<%- include('../partials/footer') %>
