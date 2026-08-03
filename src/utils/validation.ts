@@ -10,11 +10,11 @@ export const registerSchema = z.object({
   displayName: z.string().trim().min(1, "Display name is required.").max(50),
   password: z
     .string()
-    .min(12, "Use at least 12 characters.")
+    .min(12, "Use at least 12 characters for your password.")
     .max(128)
-    .regex(/[a-z]/, "Add a lowercase letter.")
-    .regex(/[A-Z]/, "Add an uppercase letter.")
-    .regex(/[0-9]/, "Add a number."),
+    .regex(/[a-z]/, "Add a lowercase letter for your password.")
+    .regex(/[A-Z]/, "Add an uppercase letter for your password.")
+    .regex(/[0-9]/, "Add a number for your password."),
 });
 
 export const loginSchema = z.object({
