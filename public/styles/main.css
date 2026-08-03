@@ -314,6 +314,7 @@ input:focus, textarea:focus { border-color: var(--purple); outline: 0; box-shado
 .timeline-heading h1 { margin: 1px 0 0; font-family: Georgia, serif; font-size: clamp(25px, 3vw, 34px); line-height: 1.1; letter-spacing: -.025em; }
 .live-pill { display: flex; align-items: center; gap: 5px; padding: 3px 8px; border: 1px solid #a7a09a; border-radius: 99px; background: var(--paper); font-family: "Courier New", monospace; font-size: 9px; font-weight: 700; }
 .live-pill i { width: 6px; height: 6px; border-radius: 50%; background: #f24d6f; animation: pulse 2s infinite; }
+.live-pill-text { padding-top: 3px; }
 .composer {
   display: flex;
   gap: 13px;
