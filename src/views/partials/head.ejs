@@ -40,12 +40,18 @@
           <% } %>
         </nav>
       </div>
-      <div class="status-strip">
-        <span class="status-led" aria-hidden="true"></span>
-        <span>CONNECTED AT 56K</span>
-        <span aria-hidden="true">·</span>
-        <span>YOU'VE GOT GOOD IDEAS</span>
-        <span class="status-time"><%= new Date().toLocaleDateString('en', { weekday: 'long', month: 'short', day: 'numeric' }) %></span>
+        <div class="status-strip">
+          <% if (currentUser) { %>
+            <span class="status-led-connected" aria-hidden="true"></span>
+            <span>CONNECTED AT 56K</span>
+          <% } else { %>
+            <span class="status-led-disconnected" aria-hidden="true"></span>
+            <span>DISCONNECTED</span>
+          <% } %>
+          <span aria-hidden="true">·</span>
+          <span>YOU'VE GOT GOOD IDEAS</span>
+          <span class="status-time"><%= new Date().toLocaleDateString('en', { weekday: 'long', month: 'short', day: 'numeric' }) %></span>
+        </div>
       </div>
     </header>
 
