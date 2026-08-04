@@ -161,7 +161,8 @@ svg {
   letter-spacing: 0.08em;
   white-space: nowrap;
 }
-.status-led { width: 6px; height: 6px; border-radius: 50%; background: #73ec8b; box-shadow: 0 0 8px #73ec8b; }
+.status-strip span:not(:first-child) { padding-top: 3px; }
+.status-led { width: 6px; height: 6px; border-radius: 50%; background: #73ec8b; box-shadow: 0 0 8px #73ec8b; animation: pulse 2s infinite; }
 .status-time { margin-left: auto; }
 
 /* Shared pieces */
