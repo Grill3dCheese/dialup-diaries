@@ -7,7 +7,8 @@
         <div class="window-title"><span>my_page.exe</span><span>— □ ×</span></div>
         <div class="profile-chip__body">
           <a class="avatar avatar--large" href="/u/<%= currentUser.username %>">
-            <span><%= initials(currentUser.displayName) %></span><i aria-hidden="true"></i>
+            <span><%= initials(currentUser.displayName) %></span>
+            <i class="presence-dot presence-dot--online" role="img" aria-label="You are online" title="Online now"></i>
           </a>
           <div>
             <strong><%= currentUser.displayName %></strong>
@@ -47,7 +48,8 @@
       <form class="composer" action="/posts" method="post">
         <input type="hidden" name="_csrf" value="<%= csrfToken %>">
         <a class="avatar" href="/u/<%= currentUser.username %>" tabindex="-1">
-          <span><%= initials(currentUser.displayName) %></span><i aria-hidden="true"></i>
+          <span><%= initials(currentUser.displayName) %></span>
+          <i class="presence-dot presence-dot--online" role="img" aria-label="You are online" title="Online now"></i>
         </a>
         <div class="composer__body">
           <label for="content">What's happening in your corner?</label>

@@ -59,12 +59,17 @@ export async function findSafeUserById(id: string) {
       username: users.username,
       displayName: users.displayName,
       bio: users.bio,
+      lastSeenAt: users.lastSeenAt,
     })
     .from(users)
     .where(eq(users.id, id))
     .limit(1);
 
   return user ?? null;
+}
+
+export async function touchUserPresence(userId: string) {
+  await db.update(users).set({ lastSeenAt: new Date() }).where(eq(users.id, userId));
 }
 
 export async function getAvailableUsernameSuggestions(username: string) {

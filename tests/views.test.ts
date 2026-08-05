@@ -8,6 +8,7 @@ const user = {
   username: "pixelpoet",
   displayName: "Maya Chen",
   bio: "Poems and bookmarks.",
+  isOnline: false,
   createdAt: new Date("2024-01-01T12:00:00Z"),
 };
 const post = {
@@ -18,6 +19,7 @@ const post = {
   authorId: user.id,
   authorUsername: user.username,
   authorDisplayName: user.displayName,
+  authorIsOnline: false,
   reposterUsername: null,
   reposterDisplayName: null,
   likeCount: 2,
@@ -55,6 +57,7 @@ describe("server-rendered pages", () => {
             createdAt: new Date(),
             username: user.username,
             displayName: user.displayName,
+            isOnline: true,
           },
         ],
         error: null,
@@ -88,6 +91,8 @@ describe("server-rendered pages", () => {
       expect(html).toContain("Dialup Diaries");
       expect(html).toContain("</html>");
     }
+    expect(pages.join("")).toContain("presence-dot--online");
+    expect(pages.join("")).toContain("presence-dot--offline");
   });
 });
 
