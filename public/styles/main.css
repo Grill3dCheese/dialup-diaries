@@ -285,7 +285,7 @@ input:focus, textarea:focus { border-color: var(--purple); outline: 0; box-shado
   background: #fff4f7;
   transform: rotate(-1deg);
 }
-.mood-card__label, .visitor-counter span { display: block; color: var(--pink-dark); font-family: "Courier New", monospace; font-size: 9px; font-weight: 700; }
+.mood-card__label, .visitor-counter__label { display: block; color: var(--pink-dark); font-family: "Courier New", monospace; font-size: 9px; font-weight: 700; }
 .mood-card div { margin-top: 4px; font-family: Georgia, serif; font-weight: 700; }
 .mood-card div span { color: var(--pink-dark); }
 .mood-card small { color: var(--muted); font-size: 9px; }
@@ -310,8 +310,21 @@ input:focus, textarea:focus { border-color: var(--purple); outline: 0; box-shado
 .web-ring li strong { font-size: 10px; }
 .web-ring li small { color: var(--muted); font-size: 8px; }
 .visitor-counter { padding: 9px; border: 1px solid var(--ink); background: var(--ink); text-align: center; }
-.visitor-counter span { color: #b8f7d2; }
-.visitor-counter strong { display: block; color: white; font-family: "Courier New", monospace; font-size: 15px; letter-spacing: .14em; }
+.visitor-counter .visitor-counter__label { color: #b8f7d2; }
+.visitor-counter strong {
+  display: flex;
+  justify-content: center;
+  gap: .14em;
+  height: 1.25em;
+  overflow: hidden;
+  color: white;
+  font-family: "Courier New", monospace;
+  font-size: 15px;
+  line-height: 1.25;
+}
+.counter-digit { width: .7em; height: 1.25em; overflow: hidden; }
+.counter-reel { display: flex; flex-direction: column; will-change: transform; }
+.counter-reel span { display: grid; flex: 0 0 1.25em; height: 1.25em; place-items: center; }
 
 /* Timeline and composer */
 .timeline-heading { display: flex; align-items: end; justify-content: space-between; margin-bottom: 16px; padding: 0 4px; }

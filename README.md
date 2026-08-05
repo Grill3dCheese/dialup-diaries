@@ -80,3 +80,7 @@ Schema changes are deliberately SQL-first: add the versioned SQL file and matchi
 ## Accessibility
 
 The UI uses semantic server-rendered HTML, keyboard-visible focus, labeled controls, live status messages, readable contrast, responsive layouts, and honors `prefers-reduced-motion`.
+
+## Visitor counter
+
+The homepage counts anonymous browser profiles using a server-signed, HTTP-only first-party cookie and an opaque UUID. It does not store IP addresses or add third-party tracking. Clearing cookies or using another browser profile will be counted as a new visitor, which is the privacy-preserving tradeoff for avoiding personal network identifiers.

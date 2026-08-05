@@ -114,6 +114,57 @@ if (flash && !reducedMotion) {
   animate(flash, { opacity: [0, 1], y: [-10, 0], scale: [0.97, 1] }, { duration: 0.28 });
 }
 
+const visitorCounter = document.querySelector("[data-visitor-counter]");
+if (visitorCounter) {
+  initializeVisitorCounter(visitorCounter);
+}
+
+function initializeVisitorCounter(counter) {
+  const output = counter.querySelector("strong");
+  const count = Number.parseInt(counter.dataset.count ?? "0", 10);
+  if (!output || !Number.isSafeInteger(count) || count < 0) return;
+
+  const digits = String(count).padStart(6, "0");
+  const reels = [];
+  output.textContent = "";
+
+  for (const [index, character] of [...digits].entries()) {
+    const targetDigit = Number.parseInt(character, 10);
+    const slot = document.createElement("span");
+    const reel = document.createElement("span");
+    slot.className = "counter-digit";
+    reel.className = "counter-reel";
+    reel.setAttribute("aria-hidden", "true");
+
+    for (let digit = 0; digit <= 9; digit += 1) {
+      const number = document.createElement("span");
+      number.textContent = String(digit);
+      reel.append(number);
+    }
+
+    slot.append(reel);
+    output.append(slot);
+    reels.push({ index, reel, slot, targetDigit });
+  }
+
+  for (const { index, reel, slot, targetDigit } of reels) {
+    const distance = targetDigit * slot.getBoundingClientRect().height;
+    if (reducedMotion) {
+      reel.style.transform = `translateY(-${distance}px)`;
+      continue;
+    }
+    animate(
+      reel,
+      { transform: ["translateY(0px)", `translateY(-${distance}px)`] },
+      {
+        duration: 0.35 + targetDigit * 0.07,
+        delay: index * 0.055,
+        ease: [0.22, 1, 0.36, 1],
+      },
+    );
+  }
+}
+
 document.querySelector("[data-confirm-delete]")?.addEventListener("submit", (event) => {
   if (!window.confirm("Delete this post permanently?")) event.preventDefault();
 });
