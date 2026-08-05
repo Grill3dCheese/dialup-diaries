@@ -20,6 +20,7 @@ export const users = pgTable(
     displayName: varchar("display_name", { length: 50 }).notNull(),
     passwordHash: text("password_hash").notNull(),
     bio: varchar("bio", { length: 280 }).notNull().default("Still customizing my corner of the web."),
+    lastSeenAt: timestamp("last_seen_at", { withTimezone: true }).notNull().defaultNow(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [

@@ -15,7 +15,10 @@
     <% if (currentUser) { %>
       <form class="comment-form" action="/posts/<%= post.id %>/comments" method="post">
         <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-        <div class="avatar"><span><%= initials(currentUser.displayName) %></span><i aria-hidden="true"></i></div>
+        <div class="avatar">
+          <span><%= initials(currentUser.displayName) %></span>
+          <i class="presence-dot presence-dot--online" role="img" aria-label="You are online" title="Online now"></i>
+        </div>
         <div>
           <label for="body">Leave a thoughtful reply</label>
           <textarea id="body" name="body" rows="3" maxlength="1000" placeholder="Add something to the conversation…" required></textarea>
@@ -33,7 +36,12 @@
       <% } %>
       <% comments.forEach((comment) => { %>
         <article class="comment">
-          <a class="avatar" href="/u/<%= comment.username %>"><span><%= initials(comment.displayName) %></span><i aria-hidden="true"></i></a>
+          <a class="avatar" href="/u/<%= comment.username %>">
+            <span><%= initials(comment.displayName) %></span>
+            <i class="presence-dot presence-dot--<%= comment.isOnline ? 'online' : 'offline' %>" role="img"
+              aria-label="<%= comment.displayName %> is <%= comment.isOnline ? 'online' : 'offline' %>"
+              title="<%= comment.isOnline ? 'Online now' : 'Offline' %>"></i>
+          </a>
           <div>
             <header><a href="/u/<%= comment.username %>"><strong><%= comment.displayName %></strong></a> <span>@<%= comment.username %></span><time><%= formatDate(comment.createdAt) %></time></header>
             <p><%= comment.body %></p>

@@ -1,11 +1,23 @@
 import { randomBytes, timingSafeEqual } from "node:crypto";
 import type { NextFunction, Request, Response } from "express";
-import { findSafeUserById } from "../services/auth.js";
+import { findSafeUserById, touchUserPresence } from "../services/auth.js";
+
+const presenceTouchIntervalMs = 60_000;
 
 export async function webLocals(req: Request, res: Response, next: NextFunction) {
   req.currentUser = req.session.userId ? await findSafeUserById(req.session.userId) : null;
   if (req.session.userId && !req.currentUser) {
     delete req.session.userId;
+  }
+  const now = Date.now();
+  if (
+    req.currentUser &&
+    (!req.session.presenceTouchedAt ||
+      now - req.session.presenceTouchedAt >= presenceTouchIntervalMs)
+  ) {
+    await touchUserPresence(req.currentUser.id);
+    req.currentUser.lastSeenAt = new Date(now);
+    req.session.presenceTouchedAt = now;
   }
 
   req.session.csrfToken ??= randomBytes(32).toString("base64url");

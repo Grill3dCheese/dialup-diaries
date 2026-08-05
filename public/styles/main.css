@@ -214,7 +214,7 @@ svg {
   font-weight: 800;
   text-decoration: none;
 }
-.avatar i {
+.avatar .presence-dot {
   position: absolute;
   right: -3px;
   bottom: -3px;
@@ -222,8 +222,10 @@ svg {
   height: 9px;
   border: 2px solid var(--paper);
   border-radius: 50%;
-  background: #46bd68;
+  transition: background-color 160ms ease, box-shadow 160ms ease;
 }
+.avatar .presence-dot--online { background: #46bd68; box-shadow: 0 0 0 2px rgba(70, 189, 104, .14); }
+.avatar .presence-dot--offline { background: #f24d6f; box-shadow: 0 0 0 2px rgba(242, 77, 111, .1); }
 .avatar--large { width: 58px; height: 58px; font-size: 18px; }
 .avatar--hero { width: 90px; height: 90px; border-width: 2px; border-radius: 24px 24px 24px 7px; box-shadow: 5px 5px 0 var(--yellow); font-size: 27px; }
 .button {

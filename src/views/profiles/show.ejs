@@ -3,7 +3,12 @@
   <section class="profile-hero">
     <div class="profile-hero__pattern" aria-hidden="true"><span>✦</span><span>☺</span><span>♥</span><span>✎</span></div>
     <div class="profile-hero__content">
-      <div class="avatar avatar--hero"><span><%= initials(user.displayName) %></span><i aria-hidden="true"></i></div>
+      <div class="avatar avatar--hero">
+        <span><%= initials(user.displayName) %></span>
+        <i class="presence-dot presence-dot--<%= user.isOnline ? 'online' : 'offline' %>" role="img"
+          aria-label="<%= user.displayName %> is <%= user.isOnline ? 'online' : 'offline' %>"
+          title="<%= user.isOnline ? 'Online now' : 'Offline' %>"></i>
+      </div>
       <div>
         <span class="eyebrow">PERSONAL HOMEPAGE OF</span>
         <h1><%= user.displayName %></h1>

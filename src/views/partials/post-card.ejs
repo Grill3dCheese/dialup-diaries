@@ -12,7 +12,9 @@
   <div class="post-main">
     <a class="avatar" href="/u/<%= post.authorUsername %>" aria-label="<%= post.authorDisplayName %>'s profile">
       <span><%= initials(post.authorDisplayName) %></span>
-      <i aria-hidden="true"></i>
+      <i class="presence-dot presence-dot--<%= post.authorIsOnline ? 'online' : 'offline' %>" role="img"
+        aria-label="<%= post.authorDisplayName %> is <%= post.authorIsOnline ? 'online' : 'offline' %>"
+        title="<%= post.authorIsOnline ? 'Online now' : 'Offline' %>"></i>
     </a>
     <div class="post-body">
       <header class="post-meta">

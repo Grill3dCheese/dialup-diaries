@@ -8,6 +8,7 @@ export type FeedPost = {
   authorId: string;
   authorUsername: string;
   authorDisplayName: string;
+  authorIsOnline: boolean;
   reposterUsername: string | null;
   reposterDisplayName: string | null;
   likeCount: number;
@@ -25,6 +26,7 @@ type FeedRow = {
   author_id: string;
   author_username: string;
   author_display_name: string;
+  author_is_online: boolean;
   reposter_username: string | null;
   reposter_display_name: string | null;
   like_count: string;
@@ -43,6 +45,7 @@ function mapFeedRow(row: FeedRow): FeedPost {
     authorId: row.author_id,
     authorUsername: row.author_username,
     authorDisplayName: row.author_display_name,
+    authorIsOnline: row.author_is_online,
     reposterUsername: row.reposter_username,
     reposterDisplayName: row.reposter_display_name,
     likeCount: Number(row.like_count),
@@ -61,6 +64,7 @@ const postProjection = `
   author.id AS author_id,
   author.username AS author_username,
   author.display_name AS author_display_name,
+  author.last_seen_at >= now() - interval '5 minutes' AS author_is_online,
   reposter.username AS reposter_username,
   reposter.display_name AS reposter_display_name,
   (SELECT count(*) FROM likes l WHERE l.post_id = p.id) AS like_count,
@@ -176,8 +180,15 @@ export async function getComments(postId: string) {
     created_at: Date;
     username: string;
     display_name: string;
+    is_online: boolean;
   }>(
-    `SELECT c.id, c.body, c.created_at, u.username, u.display_name
+    `SELECT
+       c.id,
+       c.body,
+       c.created_at,
+       u.username,
+       u.display_name,
+       u.last_seen_at >= now() - interval '5 minutes' AS is_online
      FROM comments c
      JOIN users u ON u.id = c.author_id
      WHERE c.post_id = $1
@@ -190,6 +201,7 @@ export async function getComments(postId: string) {
     createdAt: row.created_at,
     username: row.username,
     displayName: row.display_name,
+    isOnline: row.is_online,
   }));
 }
 
@@ -200,8 +212,15 @@ export async function getProfile(username: string, viewerId: string | null) {
     display_name: string;
     bio: string;
     created_at: Date;
+    is_online: boolean;
   }>(
-    `SELECT id, username, display_name, bio, created_at
+    `SELECT
+       id,
+       username,
+       display_name,
+       bio,
+       created_at,
+       last_seen_at >= now() - interval '5 minutes' AS is_online
      FROM users WHERE username = lower($1)`,
     [username],
   );
@@ -230,6 +249,7 @@ export async function getProfile(username: string, viewerId: string | null) {
       displayName: user.display_name,
       bio: user.bio,
       createdAt: user.created_at,
+      isOnline: user.is_online,
     },
     posts: postResult.rows.map(mapFeedRow),
   };
