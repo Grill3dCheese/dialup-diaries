@@ -12,23 +12,31 @@ import {
   toggleReaction,
   updateProfile,
 } from "../services/posts.js";
+import { getUniqueVisitorCount } from "../services/visitors.js";
 import { commentSchema, firstError, postSchema, profileSchema } from "../utils/validation.js";
 
 export const siteRouter = Router();
 const uuidSchema = z.uuid();
 
 siteRouter.get("/", async (req, res) => {
-  const posts = await getTimeline(req.currentUser?.id ?? null);
-  res.render("home", { title: "Your timeline", posts, composeError: null });
+  const [posts, visitorCount] = await Promise.all([
+    getTimeline(req.currentUser?.id ?? null),
+    getUniqueVisitorCount(req, res),
+  ]);
+  res.render("home", { title: "Your timeline", posts, visitorCount, composeError: null });
 });
 
 siteRouter.post("/posts", requireAuth, async (req, res) => {
   const parsed = postSchema.safeParse(req.body);
   if (!parsed.success) {
-    const posts = await getTimeline(req.currentUser?.id ?? null);
+    const [posts, visitorCount] = await Promise.all([
+      getTimeline(req.currentUser?.id ?? null),
+      getUniqueVisitorCount(req, res),
+    ]);
     return res.status(422).render("home", {
       title: "Your timeline",
       posts,
+      visitorCount,
       composeError: firstError(parsed.error),
     });
   }

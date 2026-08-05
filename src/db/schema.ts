@@ -1,4 +1,5 @@
 import {
+  bigint,
   check,
   index,
   json,
@@ -102,6 +103,16 @@ export const userSessions = pgTable(
   },
   (table) => [index("user_sessions_expire_idx").on(table.expire)],
 );
+
+export const visitors = pgTable("visitors", {
+  id: uuid("id").primaryKey(),
+  firstSeenAt: timestamp("first_seen_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const siteMetrics = pgTable("site_metrics", {
+  key: varchar("key", { length: 50 }).primaryKey(),
+  value: bigint("value", { mode: "number" }).notNull().default(0),
+});
 
 export type User = typeof users.$inferSelect;
 export type Post = typeof posts.$inferSelect;

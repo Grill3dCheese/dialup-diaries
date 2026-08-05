@@ -94,9 +94,11 @@
         <li><span>03</span><div><strong>Link Hoarders</strong><small>the good bookmarks</small></div></li>
       </ul>
     </section>
-    <div class="visitor-counter">
-      <span>YOU ARE VISITOR</span>
-      <strong>0 0 1 9 9 4</strong>
+    <div class="visitor-counter" data-visitor-counter data-count="<%= visitorCount %>">
+      <span class="visitor-counter__label">YOU ARE VISITOR</span>
+      <strong aria-label="<%= visitorCount.toLocaleString() %> unique visitors">
+        <span data-counter-fallback aria-hidden="true"><%= String(visitorCount).padStart(6, '0').split('').join(' ') %></span>
+      </strong>
     </div>
   </aside>
 </main>

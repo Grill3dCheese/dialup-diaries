@@ -45,7 +45,13 @@ const common = {
 describe("server-rendered pages", () => {
   it("renders every primary page with escaped, complete HTML", async () => {
     const pages = await Promise.all([
-      render("home.ejs", { ...common, title: "Timeline", posts: [post], composeError: null }),
+      render("home.ejs", {
+        ...common,
+        title: "Timeline",
+        posts: [post],
+        visitorCount: 42,
+        composeError: null,
+      }),
       render("posts/show.ejs", {
         ...common,
         title: "Post",
@@ -93,6 +99,8 @@ describe("server-rendered pages", () => {
     }
     expect(pages.join("")).toContain("presence-dot--online");
     expect(pages.join("")).toContain("presence-dot--offline");
+    expect(pages[0]).toContain('data-count="42"');
+    expect(pages[0]).toContain("0 0 0 0 4 2");
   });
 });
 
