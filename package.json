@@ -9,7 +9,8 @@
   },
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build:client": "esbuild src/client/app.js --bundle --minify --sourcemap --format=esm --target=es2022 --outfile=public/app.js",
+    "build:theme": "esbuild src/client/theme-init.js --bundle --minify --format=iife --target=es2022 --outfile=public/theme-init.js",
+    "build:client": "npm run build:theme && esbuild src/client/app.js --bundle --minify --sourcemap --format=esm --target=es2022 --outfile=public/app.js",
     "build:server": "tsc -p tsconfig.build.json",
     "build": "npm run build:client && npm run build:server",
     "start": "node dist/server.js",

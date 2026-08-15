@@ -10,6 +10,13 @@ describe("health check", () => {
     expect(response.body).toEqual({ status: "ok" });
     expect(response.headers["x-powered-by"]).toBeUndefined();
   });
+
+  it("serves the public changelog without database input", async () => {
+    const response = await request(createApp()).get("/changelog");
+    expect(response.status).toBe(200);
+    expect(response.text).toContain("What’s new on the web?");
+    expect(response.text).toContain("Version 0.4.0");
+  });
 });
 
 afterAll(async () => {

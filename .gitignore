@@ -6,6 +6,7 @@ coverage/
 !.env.example
 public/app.js
 public/app.js.map
+public/theme-init.js
 *.log
 .DS_Store
 Thumbs.db

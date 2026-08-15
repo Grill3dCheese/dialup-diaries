@@ -1,5 +1,6 @@
 import { Router, type Response } from "express";
 import { z } from "zod";
+import { changelog } from "../content/changelog.js";
 import { requireAuth } from "../middleware/web.js";
 import {
   createComment,
@@ -24,6 +25,10 @@ siteRouter.get("/", async (req, res) => {
     getUniqueVisitorCount(req, res),
   ]);
   res.render("home", { title: "Your timeline", posts, visitorCount, composeError: null });
+});
+
+siteRouter.get("/changelog", (_req, res) => {
+  res.render("changelog", { title: "Changelog", releases: changelog });
 });
 
 siteRouter.post("/posts", requireAuth, async (req, res) => {

@@ -1,0 +1,104 @@
+<%- include("partials/head") %>
+
+<main id="main" class="changelog-page">
+  <header class="changelog-hero">
+    <div>
+      <span class="eyebrow">RELEASE_NOTES.TXT · ALL THE LORE THAT FITS</span>
+      <h1>What’s new on the web?</h1>
+      <p>
+        Every new feature, polished pixel, and bug sent to <code>/dev/null</code>—carefully archived
+        for future internet historians.
+      </p>
+    </div>
+    <div class="changelog-hero__disk" aria-hidden="true">
+      <span></span>
+      <strong>CHANGE<br>LOG</strong>
+      <i>HD</i>
+    </div>
+  </header>
+
+  <div class="changelog-layout">
+    <aside class="window-panel changelog-index">
+      <div class="window-title">
+        <span>version_picker.exe</span>
+        <span aria-hidden="true">_ □ ×</span>
+      </div>
+      <nav aria-label="Changelog versions">
+        <p>Pick a save point:</p>
+        <ol>
+          <% releases.forEach((release, index) => { %>
+            <% const releaseId = `release-${release.version.replaceAll('.', '-')}`; %>
+            <li>
+              <a href="#<%= releaseId %>" data-changelog-link aria-controls="<%= releaseId %>"
+                <%- index === 0 ? 'aria-current="true"' : '' %>>
+                <span>Version <%= release.version %></span>
+                <strong><%= release.title %></strong>
+                <time datetime="<%= release.date %>"><%= release.dateLabel %></time>
+              </a>
+            </li>
+          <% }) %>
+        </ol>
+      </nav>
+      <div class="changelog-index__legend" aria-label="Change type legend">
+        <span><i class="change-mark change-mark--added">+</i> added</span>
+        <span><i class="change-mark change-mark--changed">~</i> changed</span>
+        <span><i class="change-mark change-mark--fixed">!</i> fixed</span>
+        <span><i class="change-mark change-mark--security">#</i> under the hood</span>
+      </div>
+    </aside>
+
+    <section class="changelog-releases" aria-label="Detailed release notes">
+      <div class="changelog-releases__toolbar" aria-hidden="true">
+        <span>dialup://updates/archive</span>
+        <span>ONLINE · READ ONLY</span>
+      </div>
+
+      <% releases.forEach((release, index) => { %>
+        <% const releaseId = `release-${release.version.replaceAll('.', '-')}`; %>
+        <details class="changelog-release" id="<%= releaseId %>" data-changelog-release <%- index === 0 ? 'open' : '' %>>
+          <summary>
+            <span class="changelog-release__version">v<%= release.version %></span>
+            <span>
+              <strong><%= release.title %></strong>
+              <time datetime="<%= release.date %>"><%= release.dateLabel %></time>
+            </span>
+            <span class="changelog-release__toggle" aria-hidden="true"></span>
+          </summary>
+
+          <div class="changelog-release__body" data-changelog-body>
+            <p class="changelog-release__summary"><%= release.summary %></p>
+
+            <div class="changelog-groups">
+              <% release.groups.forEach((group) => { %>
+                <section class="changelog-group changelog-group--<%= group.kind %>">
+                  <h2>
+                    <span class="change-mark change-mark--<%= group.kind %>" aria-hidden="true">
+                      <%= group.kind === 'added' ? '+' : group.kind === 'changed' ? '~' : group.kind === 'fixed' ? '!' : '#' %>
+                    </span>
+                    <%= group.label %>
+                  </h2>
+                  <ul>
+                    <% group.items.forEach((item) => { %>
+                      <li><%= item %></li>
+                    <% }) %>
+                  </ul>
+                </section>
+              <% }) %>
+            </div>
+
+            <footer>
+              <span>END OF FILE</span>
+              <a href="#main">Back to top ↑</a>
+            </footer>
+          </div>
+        </details>
+      <% }) %>
+
+      <noscript>
+        <p class="changelog-noscript">JavaScript is off. No problem—use each release heading to open its notes.</p>
+      </noscript>
+    </section>
+  </div>
+</main>
+
+<%- include("partials/footer") %>

@@ -1,8 +1,15 @@
 <%
   const uniqueCardId = `${post.id}-${typeof cardIndex !== 'undefined' ? cardIndex : 'detail'}`;
   const shouldTruncate = !(typeof showFull !== 'undefined' && showFull) && post.content.length > 420;
+  const halloweenArtOptions = ['pumpkin', 'skull', 'skull-white', 'ghost', 'tombstone', 'witch-hat', 'cauldron', 'bats'];
+  const halloweenArtSeed = [...post.id].reduce(
+    (hash, character) => ((hash * 31) + character.charCodeAt(0)) >>> 0,
+    0,
+  );
+  const halloweenArt = halloweenArtOptions[halloweenArtSeed % halloweenArtOptions.length];
 %>
-<article class="post-card <%= post.reposterUsername ? 'post-card--repost' : '' %>" id="<%= uniqueCardId %>">
+<article class="post-card <%= post.reposterUsername ? 'post-card--repost' : '' %>" id="<%= uniqueCardId %>"
+  data-halloween-art="<%= halloweenArt %>">
   <% if (post.reposterUsername) { %>
     <div class="repost-note">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m17 1 4 4-4 4M3 11V9a4 4 0 0 1 4-4h14M7 23l-4-4 4-4m14-2v2a4 4 0 0 1-4 4H3"/></svg>
