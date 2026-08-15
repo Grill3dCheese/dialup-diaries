@@ -1,18 +1,187 @@
 import { animate } from "motion/mini";
+import {
+  applyTheme,
+  readStoredTheme,
+  resolveTheme,
+  systemTheme,
+  themeStorageKey,
+  writeStoredTheme,
+} from "./theme.js";
 
-const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content ?? "";
+const reducedMotion = window.matchMedia(
+  "(prefers-reduced-motion: reduce)",
+).matches;
+const csrfToken =
+  document.querySelector('meta[name="csrf-token"]')?.content ?? "";
+const themeToggle = document.querySelector("[data-theme-toggle]");
+const colorSchemeQuery = window.matchMedia("(prefers-color-scheme: dark)");
+
+if (themeToggle) {
+  syncThemeToggle(document.documentElement.dataset.theme || systemTheme());
+  themeToggle.addEventListener("click", () => {
+    const currentTheme =
+      document.documentElement.dataset.theme === "dark" ? "dark" : "light";
+    const nextTheme = currentTheme === "dark" ? "light" : "dark";
+    playThemeSwitchSound(nextTheme);
+    switchTheme(nextTheme, true);
+  });
+}
+
+colorSchemeQuery.addEventListener("change", (event) => {
+  if (readStoredTheme() === "light" || readStoredTheme() === "dark") return;
+  switchTheme(event.matches ? "dark" : "light", false);
+});
+
+window.addEventListener("storage", (event) => {
+  if (event.key !== themeStorageKey) return;
+  switchTheme(resolveTheme(event.newValue, colorSchemeQuery.matches), false);
+});
+
+function switchTheme(theme, persist) {
+  const update = () => {
+    applyTheme(theme);
+    if (persist) writeStoredTheme(theme);
+    syncThemeToggle(theme);
+  };
+
+  if (!reducedMotion && document.startViewTransition) {
+    document.startViewTransition(update);
+  } else {
+    if (!reducedMotion)
+      document.documentElement.classList.add("theme-changing");
+    update();
+    window.setTimeout(
+      () => document.documentElement.classList.remove("theme-changing"),
+      320,
+    );
+  }
+
+  if (!reducedMotion && themeToggle) {
+    animate(
+      themeToggle,
+      { scale: [1, 0.9, 1.08, 1], rotate: [0, -4, 3, 0] },
+      { duration: 0.38 },
+    );
+  }
+}
+
+function syncThemeToggle(theme) {
+  if (!themeToggle) return;
+  const isDark = theme === "dark";
+  const label = isDark ? "Switch to light mode" : "Switch to dark mode";
+  themeToggle.setAttribute("aria-pressed", String(isDark));
+  themeToggle.setAttribute("aria-label", label);
+  themeToggle.title = label;
+}
+
+let themeAudioContext;
+
+function playThemeSwitchSound(theme) {
+  const AudioContext = window.AudioContext ?? window.webkitAudioContext;
+  if (!AudioContext) return;
+  themeAudioContext ??= new AudioContext();
+  void themeAudioContext.resume();
+
+  const start = themeAudioContext.currentTime;
+  const frequencies = theme === "light" ? [420, 880] : [720, 190];
+  frequencies.forEach((frequency, index) => {
+    const oscillator = themeAudioContext.createOscillator();
+    const gain = themeAudioContext.createGain();
+    const offset = index * 0.035;
+    oscillator.type = "square";
+    oscillator.frequency.setValueAtTime(frequency, start + offset);
+    gain.gain.setValueAtTime(0.0001, start + offset);
+    gain.gain.exponentialRampToValueAtTime(0.028, start + offset + 0.004);
+    gain.gain.exponentialRampToValueAtTime(0.0001, start + offset + 0.035);
+    oscillator.connect(gain);
+    gain.connect(themeAudioContext.destination);
+    oscillator.start(start + offset);
+    oscillator.stop(start + offset + 0.04);
+  });
+}
+
+const changelogReleases = [...document.querySelectorAll("[data-changelog-release]")];
+const changelogLinks = [...document.querySelectorAll("[data-changelog-link]")];
+
+if (changelogReleases.length > 0) {
+  const requestedRelease = document.getElementById(window.location.hash.slice(1));
+  if (requestedRelease?.matches("[data-changelog-release]")) {
+    activateChangelogRelease(requestedRelease, false);
+  }
+
+  window.addEventListener("hashchange", () => {
+    const release = document.getElementById(window.location.hash.slice(1));
+    if (release?.matches("[data-changelog-release]")) {
+      activateChangelogRelease(release, false);
+    }
+  });
+
+  changelogReleases.forEach((release) => {
+    release.addEventListener("toggle", () => {
+      if (release.open) syncChangelogLinks(release.id);
+    });
+  });
+}
+
+function activateChangelogRelease(release, updateUrl) {
+  changelogReleases.forEach((candidate) => {
+    candidate.open = candidate === release;
+  });
+  syncChangelogLinks(release.id);
+
+  if (updateUrl) {
+    window.history.pushState(null, "", `#${release.id}`);
+  }
+
+  const body = release.querySelector("[data-changelog-body]");
+  if (body && !reducedMotion) {
+    animate(
+      body,
+      { opacity: [0, 1], y: [9, 0] },
+      { duration: 0.28, ease: [0.22, 1, 0.36, 1] },
+    );
+  }
+
+  if (updateUrl && window.matchMedia("(max-width: 800px)").matches) {
+    window.requestAnimationFrame(() => {
+      release.scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth", block: "start" });
+    });
+  }
+}
+
+function syncChangelogLinks(releaseId) {
+  changelogLinks.forEach((link) => {
+    if (link.hash === `#${releaseId}`) link.setAttribute("aria-current", "true");
+    else link.removeAttribute("aria-current");
+  });
+}
 
 document.addEventListener("click", async (event) => {
+  const changelogLink = event.target.closest("[data-changelog-link]");
+  if (changelogLink) {
+    const release = document.getElementById(changelogLink.hash.slice(1));
+    if (!release?.matches("[data-changelog-release]")) return;
+    event.preventDefault();
+    activateChangelogRelease(release, true);
+    return;
+  }
+
   const usernameSuggestion = event.target.closest("[data-username-suggestion]");
   if (usernameSuggestion) {
     const usernameInput = document.querySelector("[data-username-input]");
     if (!usernameInput) return;
     usernameInput.value = usernameSuggestion.dataset.usernameSuggestion ?? "";
     usernameInput.focus();
-    usernameInput.setSelectionRange(usernameInput.value.length, usernameInput.value.length);
+    usernameInput.setSelectionRange(
+      usernameInput.value.length,
+      usernameInput.value.length,
+    );
     if (!reducedMotion) {
-      animate(usernameInput.closest(".input-wrap"), { scale: [1, 1.025, 1] }, { duration: 0.24 });
+      animate(
+        usernameInput.closest(".input-wrap"),
+        { scale: [1, 1.025, 1] },
+        { duration: 0.24 },
+      );
     }
     return;
   }
@@ -28,7 +197,8 @@ document.addEventListener("click", async (event) => {
     full.hidden = expanded;
     readMore.textContent = expanded ? "Read the rest" : "Show less";
     readMore.setAttribute("aria-expanded", String(!expanded));
-    if (!reducedMotion) animate(container, { opacity: [0.72, 1] }, { duration: 0.2 });
+    if (!reducedMotion)
+      animate(container, { opacity: [0.72, 1] }, { duration: 0.2 });
     return;
   }
 
@@ -37,7 +207,10 @@ document.addEventListener("click", async (event) => {
     const flash = dismiss.closest("[data-flash]");
     if (!flash) return;
     if (reducedMotion) flash.remove();
-    else animate(flash, { opacity: [1, 0], y: [0, -8] }, { duration: 0.18 }).then(() => flash.remove());
+    else
+      animate(flash, { opacity: [1, 0], y: [0, -8] }, { duration: 0.18 }).then(
+        () => flash.remove(),
+      );
     return;
   }
 
@@ -75,9 +248,20 @@ async function toggleReaction(button) {
     if (!reducedMotion) {
       const icon = button.querySelector(".action-icon");
       if (reaction === "like" && result.active) {
-        animate(icon, { scale: [1, 1.45, 0.9, 1], rotate: [0, -8, 5, 0] }, { duration: 0.42 });
+        animate(
+          icon,
+          { scale: [1, 1.45, 0.9, 1], rotate: [0, -8, 5, 0] },
+          { duration: 0.42 },
+        );
       } else {
-        animate(icon, { scale: [1, 0.8, 1.2, 1], rotate: reaction === "repost" ? [0, 180, 360] : [0, 0, 0] }, { duration: 0.38 });
+        animate(
+          icon,
+          {
+            scale: [1, 0.8, 1.2, 1],
+            rotate: reaction === "repost" ? [0, 180, 360] : [0, 0, 0],
+          },
+          { duration: 0.38 },
+        );
       }
     }
   } catch (error) {
@@ -95,7 +279,8 @@ function showToast(message) {
   toast.setAttribute("role", "alert");
   toast.textContent = message;
   document.body.append(toast);
-  if (!reducedMotion) animate(toast, { opacity: [0, 1], y: [-8, 0] }, { duration: 0.2 });
+  if (!reducedMotion)
+    animate(toast, { opacity: [0, 1], y: [-8, 0] }, { duration: 0.2 });
   window.setTimeout(() => toast.remove(), 4500);
 }
 
@@ -111,7 +296,11 @@ if (composer && count) {
 
 const flash = document.querySelector("[data-flash]");
 if (flash && !reducedMotion) {
-  animate(flash, { opacity: [0, 1], y: [-10, 0], scale: [0.97, 1] }, { duration: 0.28 });
+  animate(
+    flash,
+    { opacity: [0, 1], y: [-10, 0], scale: [0.97, 1] },
+    { duration: 0.28 },
+  );
 }
 
 const visitorCounter = document.querySelector("[data-visitor-counter]");
@@ -157,7 +346,7 @@ function initializeVisitorCounter(counter) {
       reel,
       { transform: ["translateY(0px)", `translateY(-${distance}px)`] },
       {
-        duration: 0.35 + targetDigit * 0.07,
+        duration: 5 + targetDigit * 0.12,
         delay: index * 0.055,
         ease: [0.22, 1, 0.36, 1],
       },
@@ -165,6 +354,9 @@ function initializeVisitorCounter(counter) {
   }
 }
 
-document.querySelector("[data-confirm-delete]")?.addEventListener("submit", (event) => {
-  if (!window.confirm("Delete this post permanently?")) event.preventDefault();
-});
+document
+  .querySelector("[data-confirm-delete]")
+  ?.addEventListener("submit", (event) => {
+    if (!window.confirm("Delete this post permanently?"))
+      event.preventDefault();
+  });

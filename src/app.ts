@@ -3,7 +3,11 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import compression from "compression";
 import connectPgSimple from "connect-pg-simple";
-import express, { type NextFunction, type Request, type Response } from "express";
+import express, {
+  type NextFunction,
+  type Request,
+  type Response,
+} from "express";
 import { rateLimit } from "express-rate-limit";
 import helmet from "helmet";
 import session from "express-session";
@@ -15,7 +19,10 @@ import { csrfProtection, webLocals } from "./middleware/web.js";
 import { authRouter } from "./routes/auth.js";
 import { siteRouter } from "./routes/site.js";
 
-const rootDirectory = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const rootDirectory = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "..",
+);
 const logger = pino({
   level: isProduction ? "info" : "debug",
   redact: ["req.headers.cookie", "req.headers.authorization"],
@@ -113,15 +120,18 @@ export function createApp() {
     });
   });
 
-  app.use((error: unknown, req: Request, res: Response, _next: NextFunction) => {
-    req.log.error({ err: error }, "Unhandled request error");
-    if (res.headersSent) return;
-    res.status(500).render("errors/error", {
-      title: "Something went wrong",
-      status: 500,
-      message: "The modem made a strange noise. Please try again in a moment.",
-    });
-  });
+  app.use(
+    (error: unknown, req: Request, res: Response, _next: NextFunction) => {
+      req.log.error({ err: error }, "Unhandled request error");
+      if (res.headersSent) return;
+      res.status(500).render("errors/error", {
+        title: "Something went wrong",
+        status: 500,
+        message:
+          "The modem made a strange noise. Please try again in a moment.",
+      });
+    },
+  );
 
   return app;
 }

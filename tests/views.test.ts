@@ -1,6 +1,7 @@
 import path from "node:path";
 import ejs from "ejs";
 import { describe, expect, it } from "vitest";
+import { changelog } from "../src/content/changelog.js";
 
 const views = path.resolve("src/views");
 const user = {
@@ -84,6 +85,12 @@ describe("server-rendered pages", () => {
         error: null,
         suggestions: ["pixelpoet123", "pixel_poet"],
       }),
+      render("changelog.ejs", {
+        ...common,
+        path: "/changelog",
+        title: "Changelog",
+        releases: changelog,
+      }),
       render("errors/error.ejs", {
         ...common,
         title: "Missing",
@@ -95,12 +102,22 @@ describe("server-rendered pages", () => {
     for (const html of pages) {
       expect(html).toContain("<!doctype html>");
       expect(html).toContain("Dialup Diaries");
+      expect(html).toContain('<script src="/theme-init.js"></script>');
+      expect(html).toContain('data-theme-toggle');
+      expect(html).toContain('aria-label="Toggle color theme"');
+      expect(html).toContain('/art/pumpkin-face5-white.svg');
+      expect(html).toContain('/art/spiderweb-white.svg');
+      expect(html.indexOf("/theme-init.js")).toBeLessThan(html.indexOf("/styles/main.css"));
       expect(html).toContain("</html>");
     }
     expect(pages.join("")).toContain("presence-dot--online");
     expect(pages.join("")).toContain("presence-dot--offline");
     expect(pages[0]).toContain('data-count="42"');
     expect(pages[0]).toContain("0 0 0 0 4 2");
+    expect(pages[0]).toMatch(/data-halloween-art="(?:pumpkin|skull|skull-white|ghost|tombstone|witch-hat|cauldron|bats)"/);
+    expect(pages[5]).toContain("version_picker.exe");
+    expect(pages[5]).toContain('data-changelog-release');
+    expect(pages[5]).toContain("Version 0.4.0");
   });
 });
 

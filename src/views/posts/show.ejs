@@ -1,6 +1,6 @@
 <%- include('../partials/head') %>
 <main id="main" class="narrow-page">
-  <a class="back-link" href="/">← Back to the timeline</a>
+  <a class="back-link link-hover" href="/">← Back to the timeline</a>
   <%- include('../partials/post-card', { post, cardIndex: 'detail', showFull: true }) %>
 
   <section class="comments" id="comments">
@@ -13,49 +13,49 @@
     </header>
 
     <% if (currentUser) { %>
-      <form class="comment-form" action="/posts/<%= post.id %>/comments" method="post">
-        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-        <div class="avatar">
-          <span><%= initials(currentUser.displayName) %></span>
-          <i class="presence-dot presence-dot--online" role="img" aria-label="You are online" title="Online now"></i>
-        </div>
-        <div>
-          <label for="body">Leave a thoughtful reply</label>
-          <textarea id="body" name="body" rows="3" maxlength="1000" placeholder="Add something to the conversation…" required></textarea>
-          <% if (error) { %><p class="form-error"><%= error %></p><% } %>
-          <button class="button button--primary" type="submit">Sign the guestbook</button>
-        </div>
-      </form>
+    <form class="comment-form" action="/posts/<%= post.id %>/comments" method="post">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <div class="avatar">
+        <span><%= initials(currentUser.displayName) %></span>
+        <i class="presence-dot presence-dot--online" role="img" aria-label="You are online" title="Online now"></i>
+      </div>
+      <div>
+        <label for="body">Leave a thoughtful reply</label>
+        <textarea id="body" name="body" rows="3" maxlength="1000" placeholder="Add something to the conversation…" required></textarea>
+        <% if (error) { %><p class="form-error"><%= error %></p><% } %>
+        <button class="button button--primary" type="submit">Sign the guestbook</button>
+      </div>
+    </form>
     <% } else { %>
-      <div class="sign-in-prompt"><a href="/login">Sign in</a> to join this conversation.</div>
+    <div class="sign-in-prompt"><a href="/login">Sign in</a> to join this conversation.</div>
     <% } %>
 
     <div class="comment-list">
       <% if (!comments.length) { %>
-        <div class="empty-state empty-state--small"><p>No replies yet. You could start something good.</p></div>
+      <div class="empty-state empty-state--small">
+        <p>No replies yet. You could start something good.</p>
+      </div>
       <% } %>
       <% comments.forEach((comment) => { %>
-        <article class="comment">
-          <a class="avatar" href="/u/<%= comment.username %>">
-            <span><%= initials(comment.displayName) %></span>
-            <i class="presence-dot presence-dot--<%= comment.isOnline ? 'online' : 'offline' %>" role="img"
-              aria-label="<%= comment.displayName %> is <%= comment.isOnline ? 'online' : 'offline' %>"
-              title="<%= comment.isOnline ? 'Online now' : 'Offline' %>"></i>
-          </a>
-          <div>
-            <header><a href="/u/<%= comment.username %>"><strong><%= comment.displayName %></strong></a> <span>@<%= comment.username %></span><time><%= formatDate(comment.createdAt) %></time></header>
-            <p><%= comment.body %></p>
-          </div>
-        </article>
+      <article class="comment">
+        <a class="avatar" href="/u/<%= comment.username %>">
+          <span><%= initials(comment.displayName) %></span>
+          <i class="presence-dot presence-dot--<%= comment.isOnline ? 'online' : 'offline' %>" role="img" aria-label="<%= comment.displayName %> is <%= comment.isOnline ? 'online' : 'offline' %>" title="<%= comment.isOnline ? 'Online now' : 'Offline' %>"></i>
+        </a>
+        <div>
+          <header><a href="/u/<%= comment.username %>"><strong><%= comment.displayName %></strong></a> <span>@<%= comment.username %></span><time><%= formatDate(comment.createdAt) %></time></header>
+          <p><%= comment.body %></p>
+        </div>
+      </article>
       <% }) %>
     </div>
   </section>
 
   <% if (currentUser && currentUser.id === post.authorId) { %>
-    <form class="danger-zone" action="/posts/<%= post.id %>/delete" method="post" data-confirm-delete>
-      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-      <button type="submit">Delete this post</button>
-    </form>
+  <form class="danger-zone" action="/posts/<%= post.id %>/delete" method="post" data-confirm-delete>
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <button type="submit">Delete this post</button>
+  </form>
   <% } %>
 </main>
 <%- include('../partials/footer') %>
