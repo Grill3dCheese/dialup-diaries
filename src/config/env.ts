@@ -12,6 +12,7 @@ const schema = z.object({
   DATABASE_URL: z.url().default("postgres://postgres:postgres@localhost:5432/dialup_diaries"),
   SESSION_SECRET: z.string().min(32).default("development-only-secret-change-before-deploying"),
   TRUST_PROXY: z.coerce.number().int().min(0).max(2).default(0),
+  ADMIN_USERNAMES: z.string().default(""),
 });
 
 const result = schema.safeParse(process.env);
@@ -27,3 +28,14 @@ if (result.data.NODE_ENV === "production" && result.data.SESSION_SECRET.startsWi
 
 export const env = result.data;
 export const isProduction = env.NODE_ENV === "production";
+
+export function parseAdminUsernames(value: string) {
+  return new Set(
+    value
+      .split(/[\s,]+/)
+      .map((name) => name.trim().toLowerCase())
+      .filter((name) => name.length > 0),
+  );
+}
+
+export const configuredAdminUsernames = parseAdminUsernames(env.ADMIN_USERNAMES);

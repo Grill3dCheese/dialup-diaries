@@ -42,7 +42,7 @@
         <a class="<%= path === '/' ? 'is-current' : '' %>" href="/">
           <span aria-hidden="true"><img class="open-book-icon" src="/art/open-book.svg" alt=""></span> Timeline
         </a>
-        <a class="nav-changelog <%= path === '/changelog' ? 'is-current' : '' %>" href="/changelog">
+        <a class="nav-changelog <%= path.startsWith('/changelog') ? 'is-current' : '' %>" href="/changelog">
           <span aria-hidden="true">✎</span> Changelog
         </a>
         <% if (currentUser) { %>

@@ -17,6 +17,7 @@ import { env, isProduction } from "./config/env.js";
 import { pool } from "./db/client.js";
 import { csrfProtection, webLocals } from "./middleware/web.js";
 import { authRouter } from "./routes/auth.js";
+import { changelogRouter } from "./routes/changelog.js";
 import { siteRouter } from "./routes/site.js";
 
 const rootDirectory = path.resolve(
@@ -49,24 +50,33 @@ export function createApp() {
       },
     }),
   );
-  app.use(
-    helmet({
-      contentSecurityPolicy: {
-        directives: {
-          defaultSrc: ["'self'"],
-          scriptSrc: ["'self'"],
-          styleSrc: ["'self'"],
-          imgSrc: ["'self'", "data:"],
-          fontSrc: ["'self'"],
-          objectSrc: ["'none'"],
-          baseUri: ["'self'"],
-          formAction: ["'self'"],
-          frameAncestors: ["'none'"],
+  if (process.env.NODE_ENV === "development") {
+    app.use(
+      helmet({
+        contentSecurityPolicy: false,
+        strictTransportSecurity: false,
+      }),
+    );
+  } else {
+    app.use(
+      helmet({
+        contentSecurityPolicy: {
+          directives: {
+            defaultSrc: ["'self'"],
+            scriptSrc: ["'self'"],
+            styleSrc: ["'self'"],
+            imgSrc: ["'self'", "data:"],
+            fontSrc: ["'self'"],
+            objectSrc: ["'none'"],
+            baseUri: ["'self'"],
+            formAction: ["'self'"],
+            frameAncestors: ["'none'"],
+          },
         },
-      },
-      crossOriginEmbedderPolicy: false,
-    }),
-  );
+        crossOriginEmbedderPolicy: false,
+      }),
+    );
+  }
   app.use(compression());
   app.use(
     "/",
@@ -110,6 +120,7 @@ export function createApp() {
   app.use(webLocals);
   app.use(csrfProtection);
   app.use(authRouter);
+  app.use(changelogRouter);
   app.use(siteRouter);
 
   app.use((_req, res) => {

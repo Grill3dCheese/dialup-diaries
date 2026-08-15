@@ -1,5 +1,6 @@
 import { hash, verify } from "@node-rs/argon2";
 import { eq, inArray } from "drizzle-orm";
+import { configuredAdminUsernames } from "../config/env.js";
 import { db } from "../db/client.js";
 import { users } from "../db/schema.js";
 import { buildUsernameCandidates } from "../utils/usernames.js";
@@ -60,12 +61,19 @@ export async function findSafeUserById(id: string) {
       displayName: users.displayName,
       bio: users.bio,
       lastSeenAt: users.lastSeenAt,
+      isAdmin: users.isAdmin,
     })
     .from(users)
     .where(eq(users.id, id))
     .limit(1);
 
-  return user ?? null;
+  if (!user) return null;
+  if (!user.isAdmin && configuredAdminUsernames.has(user.username)) {
+    await db.update(users).set({ isAdmin: true }).where(eq(users.id, user.id));
+    user.isAdmin = true;
+  }
+
+  return user;
 }
 
 export async function touchUserPresence(userId: string) {

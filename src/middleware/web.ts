@@ -92,3 +92,19 @@ export function requireAuth(req: Request, res: Response, next: NextFunction) {
   req.session.flash = { kind: "error", message: "Sign in to do that." };
   res.redirect(303, "/login");
 }
+
+export function requireAdmin(req: Request, res: Response, next: NextFunction) {
+  if (!req.currentUser) {
+    requireAuth(req, res, next);
+    return;
+  }
+  if (req.currentUser.isAdmin) {
+    next();
+    return;
+  }
+  res.status(403).render("errors/error", {
+    title: "Not allowed",
+    status: 403,
+    message: "Only the webmaster can edit the archives.",
+  });
+}

@@ -1,7 +1,7 @@
 import path from "node:path";
 import ejs from "ejs";
 import { describe, expect, it } from "vitest";
-import { changelog } from "../src/content/changelog.js";
+import { seedChangelog, withReleaseDateLabel } from "../src/content/changelog.js";
 
 const views = path.resolve("src/views");
 const user = {
@@ -89,7 +89,29 @@ describe("server-rendered pages", () => {
         ...common,
         path: "/changelog",
         title: "Changelog",
-        releases: changelog,
+        releases: seedChangelog.map(withReleaseDateLabel),
+      }),
+      render("changelog-edit.ejs", {
+        ...common,
+        currentUser: { ...user, isAdmin: true },
+        path: "/changelog/new",
+        title: "File a transmission",
+        mode: "create",
+        originalVersion: null,
+        error: null,
+        values: {
+          version: "0.5.0",
+          title: "The webmaster desk is open",
+          releasedOn: "2026-08-14",
+          summary: "A short postcard from this release.",
+          groups: [
+            {
+              kind: "added",
+              label: "New on the web",
+              itemsText: "A webmaster desk",
+            },
+          ],
+        },
       }),
       render("errors/error.ejs", {
         ...common,
@@ -118,6 +140,38 @@ describe("server-rendered pages", () => {
     expect(pages[5]).toContain("version_picker.exe");
     expect(pages[5]).toContain('data-changelog-release');
     expect(pages[5]).toContain("Version 0.4.0");
+    expect(pages[5]).toContain("Version 0.5.0");
+    expect(pages[5]).toContain("ONLINE · READ ONLY");
+    expect(pages[5]).not.toContain("File a new transmission");
+    expect(pages[5]).not.toContain("webmaster_desk.exe");
+    expect(pages[6]).toContain("webmaster_desk.exe");
+    expect(pages[6]).toContain("File a new transmission");
+    expect(pages[6]).toContain('name="groupKind"');
+    expect(pages[6]).toContain("New on the web");
+  });
+
+  it("shows webmaster controls only to admins and an empty archive message", async () => {
+    const [adminChangelog, emptyChangelog] = await Promise.all([
+      render("changelog.ejs", {
+        ...common,
+        currentUser: { ...user, isAdmin: true },
+        path: "/changelog",
+        title: "Changelog",
+        releases: seedChangelog.map(withReleaseDateLabel),
+      }),
+      render("changelog.ejs", {
+        ...common,
+        path: "/changelog",
+        title: "Changelog",
+        releases: [],
+      }),
+    ]);
+
+    expect(adminChangelog).toContain("ONLINE · WEBMASTER");
+    expect(adminChangelog).toContain("File a new transmission");
+    expect(adminChangelog).toContain("/changelog/0.5.0/edit");
+    expect(emptyChangelog).toContain("No transmissions archived yet.");
+    expect(emptyChangelog).toContain("Nothing filed yet.");
   });
 });
 

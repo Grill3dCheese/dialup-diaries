@@ -42,11 +42,19 @@ The browser bundle is about 10 KB minified. There is no React, Next.js, client r
 
 Open `http://localhost:3000`. Seeded accounts all use `DemoPassword123!` and are for local development only.
 
+To edit the public changelog from the site, grant webmaster access to your account. The signup form never offers an admin checkbox. Either:
+
+- set `ADMIN_USERNAMES=yourname` in `.env` (comma- or space-separated) and sign in, or
+- run `npm run db:promote-admin -- yourname`
+
+Then open `/changelog` and use **File a new transmission**. Removing a name from `ADMIN_USERNAMES` does not revoke access; use `npm run db:promote-admin -- yourname --revoke` for that.
+
 ## Commands
 
 - `npm run dev` — run the TypeScript server with reload
-- `npm run db:migrate` — apply pending migrations
+- `npm run db:migrate` — apply pending migrations and seed the changelog archive if it is empty
 - `npm run db:seed` — add local demo users and posts
+- `npm run db:promote-admin` — grant or revoke webmaster access for a username
 - `npm run check` — type-check, lint, test, and build
 - `npm run start` — run the compiled production server
 
@@ -72,6 +80,7 @@ Schema changes are deliberately SQL-first: add the versioned SQL file and matchi
 ## Production notes
 
 - Set `NODE_ENV=production`, a unique `SESSION_SECRET`, and the production `DATABASE_URL`.
+- After creating your live account, grant webmaster access with `ADMIN_USERNAMES` or `npm run db:promote-admin`. Do not put an admin flag on the public registration form.
 - Terminate TLS at a trusted reverse proxy and set `TRUST_PROXY=1` when there is exactly one proxy hop.
 - Run `npm run db:migrate` as a release step, then `npm run build` and `npm start`.
 - Keep the database on a private network, use a least-privilege application role, require verified TLS certificates, and back it up.

@@ -1736,6 +1736,112 @@ textarea:focus {
   font-size: 10px;
   text-align: center;
 }
+.changelog-index__empty,
+.changelog-empty {
+  margin: 0;
+  padding: 18px 16px;
+  color: var(--muted);
+  font-family: Georgia, serif;
+  font-size: 14px;
+  text-align: center;
+}
+.changelog-empty {
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+}
+.changelog-webmaster-bar {
+  display: flex;
+  justify-content: flex-end;
+  margin: 0 0 12px;
+}
+.changelog-release__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.changelog-editor-page {
+  width: min(760px, calc(100% - 40px));
+  margin: 38px auto 90px;
+}
+.changelog-editor form {
+  display: grid;
+  gap: 16px;
+  padding: 28px;
+}
+.changelog-editor h1 {
+  margin: 4px 0 8px;
+  font-family: Georgia, serif;
+  font-size: 28px;
+  line-height: 1.1;
+}
+.changelog-editor form > div > p,
+.changelog-editor small {
+  margin: 0;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 400;
+}
+.changelog-editor label {
+  display: grid;
+  gap: 5px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+}
+.changelog-editor__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.changelog-editor__groups {
+  display: grid;
+  gap: 14px;
+}
+.changelog-editor__group {
+  display: grid;
+  gap: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 14px;
+  background: #fffdf6;
+}
+.changelog-editor__group-head {
+  display: grid;
+  grid-template-columns: 160px minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: end;
+}
+.changelog-editor select {
+  width: 100%;
+  border: 1px solid #aaa2a0;
+  border-radius: 6px;
+  padding: 10px 11px;
+  background: var(--field-background);
+}
+.changelog-editor select:focus {
+  border-color: var(--purple);
+  outline: 0;
+  box-shadow: 0 0 0 3px var(--focus-ring);
+}
+.changelog-editor__remove {
+  border: 0;
+  background: transparent;
+  color: #a43b50;
+  font-size: 9px;
+  font-weight: 700;
+  text-decoration: underline;
+}
+.changelog-editor__remove:disabled {
+  color: var(--muted);
+  text-decoration: none;
+  cursor: not-allowed;
+}
+.changelog-editor__actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
 
 /* Error and footer */
 .error-page {
@@ -2118,6 +2224,21 @@ html.theme-changing body {
 [data-theme="dark"] .changelog-release__summary {
   background: #17131c;
 }
+[data-theme="dark"] .changelog-empty {
+  border-color: #70687a;
+}
+[data-theme="dark"] .changelog-editor__group {
+  border-color: #70687a;
+  background: #17131c;
+}
+[data-theme="dark"] .changelog-editor select {
+  border-color: #777080;
+  background: var(--field-background);
+  color: inherit;
+}
+[data-theme="dark"] .changelog-editor__remove:disabled {
+  color: #918b9e;
+}
 [data-theme="dark"] .site-footer {
   border-top-color: #70687a;
 }
@@ -2364,6 +2485,14 @@ html.theme-changing body {
   .changelog-index ol {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+  .changelog-editor__row,
+  .changelog-editor__group-head,
+  .changelog-editor__actions {
+    grid-template-columns: 1fr;
+  }
+  .changelog-editor__actions {
+    display: grid;
+  }
   .halloween-art {
     display: none !important;
   }
@@ -2453,6 +2582,12 @@ html.theme-changing body {
   .changelog-release__summary {
     margin-inline: -15px;
     padding-inline: 15px;
+  }
+  .changelog-editor-page {
+    width: calc(100% - 20px);
+  }
+  .changelog-editor form {
+    padding: 20px;
   }
   .status-time {
     display: none;

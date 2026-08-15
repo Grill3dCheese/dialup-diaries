@@ -12,7 +12,7 @@ declare module "express-session" {
 declare global {
   namespace Express {
     interface Request {
-      currentUser: Pick<User, "id" | "username" | "displayName" | "bio" | "lastSeenAt"> | null;
+      currentUser: Pick<User, "id" | "username" | "displayName" | "bio" | "lastSeenAt" | "isAdmin"> | null;
     }
   }
 }
