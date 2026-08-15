@@ -354,9 +354,62 @@ function initializeVisitorCounter(counter) {
   }
 }
 
-document
-  .querySelector("[data-confirm-delete]")
-  ?.addEventListener("submit", (event) => {
-    if (!window.confirm("Delete this post permanently?"))
-      event.preventDefault();
+document.querySelectorAll("[data-confirm-delete]").forEach((form) => {
+  form.addEventListener("submit", (event) => {
+    const message =
+      form.getAttribute("data-confirm-delete") || "Delete this permanently?";
+    if (!window.confirm(message)) event.preventDefault();
   });
+});
+
+const changelogGroups = document.querySelector("[data-changelog-groups]");
+const changelogGroupTemplate = document.querySelector(
+  "[data-changelog-group-template]",
+);
+const addChangelogGroup = document.querySelector("[data-add-changelog-group]");
+const defaultSectionLabels = {
+  added: "New on the web",
+  changed: "Polished pixels",
+  fixed: "Bugs sent to /dev/null",
+  security: "Under the hood",
+};
+
+if (changelogGroups && changelogGroupTemplate) {
+  const sectionCards = () => [
+    ...changelogGroups.querySelectorAll("[data-changelog-group]"),
+  ];
+
+  const syncSectionControls = () => {
+    const cards = sectionCards();
+    cards.forEach((card) => {
+      const remove = card.querySelector("[data-remove-changelog-group]");
+      if (remove) remove.disabled = cards.length <= 1;
+    });
+  };
+
+  addChangelogGroup?.addEventListener("click", () => {
+    changelogGroups.append(changelogGroupTemplate.content.cloneNode(true));
+    syncSectionControls();
+  });
+
+  changelogGroups.addEventListener("click", (event) => {
+    const remove = event.target.closest("[data-remove-changelog-group]");
+    if (!remove || sectionCards().length <= 1) return;
+    remove.closest("[data-changelog-group]")?.remove();
+    syncSectionControls();
+  });
+
+  changelogGroups.addEventListener("change", (event) => {
+    const select = event.target.closest("[name='groupKind']");
+    if (!select) return;
+    const card = select.closest("[data-changelog-group]");
+    const label = card?.querySelector("[name='groupLabel']");
+    if (!label) return;
+    const defaults = Object.values(defaultSectionLabels);
+    if (!label.value.trim() || defaults.includes(label.value.trim())) {
+      label.value = defaultSectionLabels[select.value] ?? "";
+    }
+  });
+
+  syncSectionControls();
+}

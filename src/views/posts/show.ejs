@@ -52,7 +52,7 @@
   </section>
 
   <% if (currentUser && currentUser.id === post.authorId) { %>
-  <form class="danger-zone" action="/posts/<%= post.id %>/delete" method="post" data-confirm-delete>
+  <form class="danger-zone" action="/posts/<%= post.id %>/delete" method="post" data-confirm-delete="Delete this post permanently?">
     <input type="hidden" name="_csrf" value="<%= csrfToken %>">
     <button type="submit">Delete this post</button>
   </form>

@@ -1,4 +1,6 @@
-export type ChangeKind = "added" | "changed" | "fixed" | "security";
+export const changeKinds = ["added", "changed", "fixed", "security"] as const;
+
+export type ChangeKind = (typeof changeKinds)[number];
 
 export type ChangelogGroup = {
   kind: ChangeKind;
@@ -7,7 +9,7 @@ export type ChangelogGroup = {
 };
 
 export type ChangelogRelease = {
-  version: `${number}.${number}.${number}`;
+  version: string;
   title: string;
   date: string;
   dateLabel: string;
@@ -15,12 +17,90 @@ export type ChangelogRelease = {
   groups: readonly ChangelogGroup[];
 };
 
-export const changelog = [
+type SeedChangelogRelease = Omit<ChangelogRelease, "dateLabel"> & {
+  version: `${number}.${number}.${number}`;
+};
+
+export const changeKindLabels: Record<ChangeKind, string> = {
+  added: "New on the web",
+  changed: "Polished pixels",
+  fixed: "Bugs sent to /dev/null",
+  security: "Under the hood",
+};
+
+export function formatReleaseDate(date: string) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return date;
+  const parsed = new Date(`${date}T00:00:00.000Z`);
+  if (Number.isNaN(parsed.getTime())) return date;
+  return new Intl.DateTimeFormat("en", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(parsed);
+}
+
+export function withReleaseDateLabel<T extends { date: string }>(release: T): T & { dateLabel: string } {
+  return { ...release, dateLabel: formatReleaseDate(release.date) };
+}
+
+export function compareSemanticVersions(left: string, right: string) {
+  const leftParts = left.split(".").map(Number);
+  const rightParts = right.split(".").map(Number);
+  for (let index = 0; index < 3; index += 1) {
+    const difference = (leftParts[index] ?? 0) - (rightParts[index] ?? 0);
+    if (difference !== 0) return difference;
+  }
+  return 0;
+}
+
+export function defaultChangelogEditorGroups() {
+  return changeKinds.map((kind) => ({
+    kind,
+    label: changeKindLabels[kind],
+    itemsText: "",
+  }));
+}
+
+export const seedChangelog = [
+  {
+    version: "0.5.0",
+    title: "The webmaster desk is open",
+    date: "2026-08-14",
+    summary:
+      "Release notes can now be filed from a private webmaster desk, so the archive can grow without hand-editing the source.",
+    groups: [
+      {
+        kind: "added",
+        label: "New on the web",
+        items: [
+          "A retro webmaster desk for drafting new semantic-version transmissions.",
+          "Repeatable Added, Changed, Fixed, and Under the hood sections that keep the public changelog’s shape.",
+          "Edit and delete controls that appear only for the webmaster.",
+        ],
+      },
+      {
+        kind: "changed",
+        label: "Polished pixels",
+        items: [
+          "The public changelog now loads from the database after a one-time seed of the existing archive.",
+          "The live page still uses the same layout, fade, and section language—only the filing method changed.",
+        ],
+      },
+      {
+        kind: "security",
+        label: "Under the hood",
+        items: [
+          "Webmaster access is granted from server configuration or a one-off CLI command, never from the public signup form.",
+          "Changelog edits stay behind authentication, CSRF protection, and validated payloads.",
+        ],
+      },
+    ],
+  },
   {
     version: "0.4.0",
     title: "The changelog has entered the chat",
     date: "2026-08-14",
-    dateLabel: "August 14, 2026",
     summary:
       "A hand-curated release archive arrived so every new corner, creature, and quality-of-life improvement has a home.",
     groups: [
@@ -47,7 +127,6 @@ export const changelog = [
     version: "0.3.1",
     title: "The monsters got a makeover",
     date: "2026-08-05",
-    dateLabel: "August 5, 2026",
     summary:
       "The after-dark decorations became clearer, friendlier, and more varied while keeping their handmade web charm.",
     groups: [
@@ -73,7 +152,6 @@ export const changelog = [
     version: "0.3.0",
     title: "After dark, the web gets weird",
     date: "2026-08-05",
-    dateLabel: "August 5, 2026",
     summary:
       "Dialup Diaries gained a neon, Halloween-inspired dark mode without changing the original daylight design.",
     groups: [
@@ -108,7 +186,6 @@ export const changelog = [
     version: "0.2.0",
     title: "Signs of life on the information superhighway",
     date: "2026-08-04",
-    dateLabel: "August 4, 2026",
     summary:
       "The community started feeling alive with presence indicators, friendlier registration, and a real visitor counter.",
     groups: [
@@ -143,7 +220,6 @@ export const changelog = [
     version: "0.1.0",
     title: "A nostalgic blogging site is born!",
     date: "2026-08-01",
-    dateLabel: "August 1, 2026",
     summary:
       "The first usable Dialup Diaries release brought personal-homepage energy to a modern, lightweight social diary.",
     groups: [
@@ -166,4 +242,4 @@ export const changelog = [
       },
     ],
   },
-] as const satisfies readonly ChangelogRelease[];
+] as const satisfies readonly SeedChangelogRelease[];

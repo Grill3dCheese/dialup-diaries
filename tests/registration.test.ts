@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isUsernameConflict } from "../src/utils/database-errors.js";
+import { isChangelogVersionConflict, isUsernameConflict } from "../src/utils/database-errors.js";
 import { buildUsernameCandidates } from "../src/utils/usernames.js";
 
 describe("duplicate username registration", () => {
@@ -16,6 +16,16 @@ describe("duplicate username registration", () => {
     expect(
       isUsernameConflict({
         cause: { code: "23505", constraint: "some_other_unique_constraint" },
+      }),
+    ).toBe(false);
+    expect(
+      isChangelogVersionConflict({
+        cause: { code: "23505", constraint: "changelog_releases_version_idx" },
+      }),
+    ).toBe(true);
+    expect(
+      isChangelogVersionConflict({
+        cause: { code: "23505", constraint: "users_username_lower_idx" },
       }),
     ).toBe(false);
   });

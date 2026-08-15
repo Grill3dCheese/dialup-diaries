@@ -1,0 +1,20 @@
+<div class="changelog-editor__group" data-changelog-group>
+  <div class="changelog-editor__group-head">
+    <label>Section type
+      <select name="groupKind">
+        <option value="added" <%= group.kind === 'added' ? 'selected' : '' %>>Added</option>
+        <option value="changed" <%= group.kind === 'changed' ? 'selected' : '' %>>Changed</option>
+        <option value="fixed" <%= group.kind === 'fixed' ? 'selected' : '' %>>Fixed</option>
+        <option value="security" <%= group.kind === 'security' ? 'selected' : '' %>>Under the hood</option>
+      </select>
+    </label>
+    <label>Heading
+      <input name="groupLabel" value="<%= group.label %>" maxlength="60">
+    </label>
+    <button class="changelog-editor__remove" type="button" data-remove-changelog-group>Remove</button>
+  </div>
+  <label>Notes
+    <textarea name="groupItems" rows="5" maxlength="8000" placeholder="One bullet per line."><%= group.itemsText %></textarea>
+    <small>One bullet per line. Empty sections are ignored when you save.</small>
+  </label>
+</div>

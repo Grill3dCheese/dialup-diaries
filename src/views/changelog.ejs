@@ -25,6 +25,9 @@
       </div>
       <nav aria-label="Changelog versions">
         <p>Pick a save point:</p>
+        <% if (releases.length === 0) { %>
+          <p class="changelog-index__empty">Nothing filed yet.</p>
+        <% } else { %>
         <ol>
           <% releases.forEach((release, index) => { %>
             <% const releaseId = `release-${release.version.replaceAll('.', '-')}`; %>
@@ -38,6 +41,7 @@
             </li>
           <% }) %>
         </ol>
+        <% } %>
       </nav>
       <div class="changelog-index__legend" aria-label="Change type legend">
         <span><i class="change-mark change-mark--added">+</i> added</span>
@@ -50,8 +54,17 @@
     <section class="changelog-releases" aria-label="Detailed release notes">
       <div class="changelog-releases__toolbar" aria-hidden="true">
         <span>dialup://updates/archive</span>
-        <span>ONLINE · READ ONLY</span>
+        <span><%= currentUser && currentUser.isAdmin ? 'ONLINE · WEBMASTER' : 'ONLINE · READ ONLY' %></span>
       </div>
+      <% if (currentUser && currentUser.isAdmin) { %>
+      <p class="changelog-webmaster-bar">
+        <a class="button button--small" href="/changelog/new">File a new transmission</a>
+      </p>
+      <% } %>
+
+      <% if (releases.length === 0) { %>
+        <p class="changelog-empty">No transmissions archived yet.</p>
+      <% } %>
 
       <% releases.forEach((release, index) => { %>
         <% const releaseId = `release-${release.version.replaceAll('.', '-')}`; %>
@@ -88,7 +101,12 @@
 
             <footer>
               <span>END OF FILE</span>
-              <a href="#main">Back to top ↑</a>
+              <span class="changelog-release__links">
+                <% if (currentUser && currentUser.isAdmin) { %>
+                <a href="/changelog/<%= release.version %>/edit">Edit this save point</a>
+                <% } %>
+                <a href="#main">Back to top ↑</a>
+              </span>
             </footer>
           </div>
         </details>

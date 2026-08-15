@@ -1,0 +1,65 @@
+<%- include("partials/head") %>
+
+<main id="main" class="changelog-editor-page">
+  <a class="back-link link-hover" href="/changelog">← Back to the archives</a>
+
+  <section class="window-panel changelog-editor">
+    <div class="window-title">
+      <span>webmaster_desk.exe</span>
+      <span aria-hidden="true">_ □ ×</span>
+    </div>
+    <form action="<%= mode === 'edit' ? `/changelog/${originalVersion}` : '/changelog' %>" method="post">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <div>
+        <span class="eyebrow"><%= mode === 'edit' ? 'UPDATE.TXT' : 'NEW_TRANSMISSION.TXT' %></span>
+        <h1><%= mode === 'edit' ? 'Revise this save point' : 'File a new transmission' %></h1>
+        <p>Keep the public notes in the same Added / Changed / Fixed / Under the hood shape.</p>
+      </div>
+
+      <% if (error) { %><div class="form-error form-error--box" role="alert"><%= error %></div><% } %>
+
+      <div class="changelog-editor__row">
+        <label>Version
+          <input name="version" value="<%= values.version %>" inputmode="decimal" maxlength="32" required pattern="(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)" placeholder="0.5.0" autofocus>
+        </label>
+        <label>Release date
+          <input type="date" name="releasedOn" value="<%= values.releasedOn %>" required>
+        </label>
+      </div>
+
+      <label>Title
+        <input name="title" value="<%= values.title %>" maxlength="120" required placeholder="The webmaster desk is open">
+      </label>
+
+      <label>Summary
+        <textarea name="summary" rows="3" maxlength="600" required placeholder="A short postcard from this release."><%= values.summary %></textarea>
+      </label>
+
+      <div class="changelog-editor__groups" data-changelog-groups>
+        <% values.groups.forEach((group) => { %>
+          <%- include("partials/changelog-group-fields", { group }) %>
+        <% }) %>
+      </div>
+
+      <div class="changelog-editor__actions">
+        <button class="button button--small" type="button" data-add-changelog-group>Add another section</button>
+        <button class="button button--primary" type="submit">
+          <%= mode === 'edit' ? 'Save these notes' : 'File this transmission' %>
+        </button>
+      </div>
+    </form>
+  </section>
+
+  <% if (mode === 'edit' && originalVersion) { %>
+  <form class="danger-zone" action="/changelog/<%= originalVersion %>/delete" method="post" data-confirm-delete="Delete version <%= originalVersion %> from the archives?">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <button type="submit">Delete this transmission</button>
+  </form>
+  <% } %>
+</main>
+
+<template data-changelog-group-template>
+  <%- include("partials/changelog-group-fields", { group: { kind: "added", label: "New on the web", itemsText: "" } }) %>
+</template>
+
+<%- include("partials/footer") %>
