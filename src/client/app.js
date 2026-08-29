@@ -1,5 +1,10 @@
 import { animate } from "motion/mini";
 import {
+  initPushSubscription,
+  resetAppBadgeContext,
+} from "./push-subscription.js";
+import { initSocketFeed } from "./socket-feed.js";
+import {
   applyTheme,
   readStoredTheme,
   resolveTheme,
@@ -413,3 +418,16 @@ if (changelogGroups && changelogGroupTemplate) {
 
   syncSectionControls();
 }
+
+initSocketFeed();
+initPushSubscription({
+  csrfToken,
+  onError: showToast,
+});
+
+void resetAppBadgeContext({ csrfToken });
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible") {
+    void resetAppBadgeContext({ csrfToken });
+  }
+});

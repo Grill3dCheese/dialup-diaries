@@ -4,6 +4,9 @@ import {
   changelogReleaseFromForm,
   commentSchema,
   parseChangelogFormBody,
+  parsePushReadBody,
+  parsePushSubscribeBody,
+  parsePushUnsubscribeBody,
   postSchema,
   registerSchema,
 } from "../src/utils/validation.js";
@@ -30,9 +33,15 @@ describe("input validation", () => {
   });
 
   it("enforces post and comment limits", () => {
-    expect(postSchema.safeParse({ content: "x".repeat(5001) }).success).toBe(false);
-    expect(commentSchema.safeParse({ body: "x".repeat(1001) }).success).toBe(false);
-    expect(postSchema.parse({ content: "  hello web  " }).content).toBe("hello web");
+    expect(postSchema.safeParse({ content: "x".repeat(5001) }).success).toBe(
+      false,
+    );
+    expect(commentSchema.safeParse({ body: "x".repeat(1001) }).success).toBe(
+      false,
+    );
+    expect(postSchema.parse({ content: "  hello web  " }).content).toBe(
+      "hello web",
+    );
   });
 
   it("parses repeated changelog group fields from a simple form body", () => {
@@ -114,5 +123,44 @@ describe("input validation", () => {
       "nightowl",
     ]);
     expect(parseAdminUsernames("").size).toBe(0);
+  });
+
+  it("accepts browser push subscriptions from known providers only", () => {
+    const valid = parsePushSubscribeBody({
+      endpoint: "https://fcm.googleapis.com/fcm/send/abc",
+      keys: { p256dh: "p256dh-key-value", auth: "auth-secret" },
+      platform: "Chrome",
+    });
+    expect(valid.success).toBe(true);
+    if (!valid.success) return;
+    expect(valid.data.platform).toBe("chrome");
+
+    const nested = parsePushSubscribeBody({
+      subscription: {
+        endpoint: "https://updates.push.services.mozilla.com/wpush/v2/token",
+        keys: { p256dh: "p256dh-key-value", auth: "auth-secret" },
+      },
+    });
+    expect(nested.success).toBe(true);
+
+    expect(
+      parsePushSubscribeBody({
+        endpoint: "https://evil.example/push",
+        keys: { p256dh: "p256dh-key-value", auth: "auth-secret" },
+      }).success,
+    ).toBe(false);
+    expect(
+      parsePushUnsubscribeBody({
+        subscription: { endpoint: "https://fcm.googleapis.com/fcm/send/abc" },
+      }).success,
+    ).toBe(true);
+
+    expect(parsePushReadBody({}).success).toBe(true);
+    expect(parsePushReadBody({ endpoint: "" }).success).toBe(false);
+    expect(
+      parsePushReadBody({
+        endpoint: "https://fcm.googleapis.com/fcm/send/abc",
+      }).success,
+    ).toBe(true);
   });
 });

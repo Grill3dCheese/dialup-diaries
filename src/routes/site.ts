@@ -12,8 +12,15 @@ import {
   toggleReaction,
   updateProfile,
 } from "../services/posts.js";
+import { pushNotificationService } from "../services/pushNotificationService.js";
+import { socketService, toBlogPostPayload } from "../services/socketService.js";
 import { getUniqueVisitorCount } from "../services/visitors.js";
-import { commentSchema, firstError, postSchema, profileSchema } from "../utils/validation.js";
+import {
+  commentSchema,
+  firstError,
+  postSchema,
+  profileSchema,
+} from "../utils/validation.js";
 
 export const siteRouter = Router();
 const uuidSchema = z.uuid();
@@ -23,7 +30,12 @@ siteRouter.get("/", async (req, res) => {
     getTimeline(req.currentUser?.id ?? null),
     getUniqueVisitorCount(req, res),
   ]);
-  res.render("home", { title: "Your timeline", posts, visitorCount, composeError: null });
+  res.render("home", {
+    title: "Your timeline",
+    posts,
+    visitorCount,
+    composeError: null,
+  });
 });
 
 siteRouter.post("/posts", requireAuth, async (req, res) => {
@@ -42,6 +54,34 @@ siteRouter.post("/posts", requireAuth, async (req, res) => {
   }
 
   const postId = await createPost(req.currentUser!.id, parsed.data.content);
+
+  if (postId) {
+    try {
+      const created = await getPost(postId, req.currentUser!.id);
+      if (created) {
+        socketService.broadcastNewBlogPost(toBlogPostPayload(created));
+        void pushNotificationService
+          .sendNewBlogNotification(created.content, created.id)
+          .catch((error: unknown) => {
+            req.log.error(
+              { err: error, postId },
+              "Web push fanout failed after blog post commit",
+            );
+          });
+      } else {
+        req.log.warn(
+          { postId },
+          "Blog post committed but could not be loaded for socket broadcast",
+        );
+      }
+    } catch (error) {
+      req.log.error(
+        { err: error, postId },
+        "Socket broadcast failed after blog post commit",
+      );
+    }
+  }
+
   req.session.flash = { kind: "success", message: "Posted to your diary." };
   return res.redirect(303, postId ? `/posts/${postId}` : "/");
 });
@@ -56,7 +96,12 @@ siteRouter.get("/posts/:postId", async (req, res) => {
   ]);
   if (!post) return renderNotFound(res);
 
-  return res.render("posts/show", { title: `Post by ${post.authorDisplayName}`, post, comments, error: null });
+  return res.render("posts/show", {
+    title: `Post by ${post.authorDisplayName}`,
+    post,
+    comments,
+    error: null,
+  });
 });
 
 siteRouter.post("/posts/:postId/comments", requireAuth, async (req, res) => {
@@ -95,28 +140,41 @@ siteRouter.post("/posts/:postId/delete", requireAuth, async (req, res) => {
   return res.redirect(303, "/");
 });
 
-siteRouter.post("/api/posts/:postId/:reaction", requireAuth, async (req, res) => {
-  const parsedId = uuidSchema.safeParse(req.params.postId);
-  const reaction = req.params.reaction;
-  if (!parsedId.success || (reaction !== "like" && reaction !== "repost")) {
-    return res.status(404).json({ error: "Not found." });
-  }
-  const result = await toggleReaction(
-    reaction === "like" ? "likes" : "reposts",
-    parsedId.data,
-    req.currentUser!.id,
-  );
-  return res.json(result);
-});
+siteRouter.post(
+  "/api/posts/:postId/:reaction",
+  requireAuth,
+  async (req, res) => {
+    const parsedId = uuidSchema.safeParse(req.params.postId);
+    const reaction = req.params.reaction;
+    if (!parsedId.success || (reaction !== "like" && reaction !== "repost")) {
+      return res.status(404).json({ error: "Not found." });
+    }
+    const result = await toggleReaction(
+      reaction === "like" ? "likes" : "reposts",
+      parsedId.data,
+      req.currentUser!.id,
+    );
+    return res.json(result);
+  },
+);
 
 siteRouter.get("/u/:username", async (req, res) => {
-  const profile = await getProfile(firstParam(req.params.username), req.currentUser?.id ?? null);
+  const profile = await getProfile(
+    firstParam(req.params.username),
+    req.currentUser?.id ?? null,
+  );
   if (!profile) return renderNotFound(res);
-  return res.render("profiles/show", { title: profile.user.displayName, ...profile, error: null });
+  return res.render("profiles/show", {
+    title: profile.user.displayName,
+    ...profile,
+    error: null,
+  });
 });
 
 siteRouter.post("/u/:username", requireAuth, async (req, res) => {
-  if (firstParam(req.params.username).toLowerCase() !== req.currentUser!.username) {
+  if (
+    firstParam(req.params.username).toLowerCase() !== req.currentUser!.username
+  ) {
     return res.status(403).render("errors/error", {
       title: "Not allowed",
       status: 403,
@@ -125,7 +183,10 @@ siteRouter.post("/u/:username", requireAuth, async (req, res) => {
   }
   const parsed = profileSchema.safeParse(req.body);
   if (!parsed.success) {
-    const profile = await getProfile(req.currentUser!.username, req.currentUser!.id);
+    const profile = await getProfile(
+      req.currentUser!.username,
+      req.currentUser!.id,
+    );
     if (!profile) return renderNotFound(res);
     return res.status(422).render("profiles/show", {
       title: profile.user.displayName,

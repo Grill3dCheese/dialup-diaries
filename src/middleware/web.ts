@@ -1,11 +1,18 @@
 import { randomBytes, timingSafeEqual } from "node:crypto";
 import type { NextFunction, Request, Response } from "express";
+import { vapidPublicKey } from "../config/env.js";
 import { findSafeUserById, touchUserPresence } from "../services/auth.js";
 
 const presenceTouchIntervalMs = 60_000;
 
-export async function webLocals(req: Request, res: Response, next: NextFunction) {
-  req.currentUser = req.session.userId ? await findSafeUserById(req.session.userId) : null;
+export async function webLocals(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  req.currentUser = req.session.userId
+    ? await findSafeUserById(req.session.userId)
+    : null;
   if (req.session.userId && !req.currentUser) {
     delete req.session.userId;
   }
@@ -22,6 +29,7 @@ export async function webLocals(req: Request, res: Response, next: NextFunction)
 
   req.session.csrfToken ??= randomBytes(32).toString("base64url");
   res.locals.csrfToken = req.session.csrfToken;
+  res.locals.vapidPublicKey = vapidPublicKey;
   res.locals.currentUser = req.currentUser;
   res.locals.path = req.path;
   res.locals.flash = req.session.flash ?? null;
@@ -38,14 +46,19 @@ export async function webLocals(req: Request, res: Response, next: NextFunction)
     new Intl.DateTimeFormat("en", {
       month: "short",
       day: "numeric",
-      year: date.getFullYear() === new Date().getFullYear() ? undefined : "numeric",
+      year:
+        date.getFullYear() === new Date().getFullYear() ? undefined : "numeric",
       hour: "numeric",
       minute: "2-digit",
     }).format(date);
   next();
 }
 
-export function csrfProtection(req: Request, res: Response, next: NextFunction) {
+export function csrfProtection(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
   if (["GET", "HEAD", "OPTIONS"].includes(req.method)) {
     next();
     return;
@@ -70,7 +83,9 @@ export function csrfProtection(req: Request, res: Response, next: NextFunction) 
   }
 
   if (req.accepts(["html", "json"]) === "json") {
-    res.status(403).json({ error: "Your session expired. Refresh and try again." });
+    res
+      .status(403)
+      .json({ error: "Your session expired. Refresh and try again." });
     return;
   }
   res.status(403).render("errors/error", {

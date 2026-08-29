@@ -1,7 +1,10 @@
 import path from "node:path";
 import ejs from "ejs";
 import { describe, expect, it } from "vitest";
-import { seedChangelog, withReleaseDateLabel } from "../src/content/changelog.js";
+import {
+  seedChangelog,
+  withReleaseDateLabel,
+} from "../src/content/changelog.js";
 
 const views = path.resolve("src/views");
 const user = {
@@ -69,7 +72,13 @@ describe("server-rendered pages", () => {
         ],
         error: null,
       }),
-      render("profiles/show.ejs", { ...common, title: "Profile", user, posts: [post], error: null }),
+      render("profiles/show.ejs", {
+        ...common,
+        title: "Profile",
+        user,
+        posts: [post],
+        error: null,
+      }),
       render("auth/login.ejs", {
         ...common,
         currentUser: null,
@@ -125,20 +134,36 @@ describe("server-rendered pages", () => {
       expect(html).toContain("<!doctype html>");
       expect(html).toContain("Dialup Diaries");
       expect(html).toContain('<script src="/theme-init.js"></script>');
-      expect(html).toContain('data-theme-toggle');
+      expect(html).toContain("data-theme-toggle");
       expect(html).toContain('aria-label="Toggle color theme"');
-      expect(html).toContain('/art/pumpkin-face5-white.svg');
-      expect(html).toContain('/art/spiderweb-white.svg');
-      expect(html.indexOf("/theme-init.js")).toBeLessThan(html.indexOf("/styles/main.css"));
+      expect(html).toContain("data-push-toggle");
+      expect(html).toContain("PAGER OFF");
+      expect(html).toContain("data-pager-hint");
+      expect(html).toContain('rel="manifest"');
+      expect(html).toContain("/art/pumpkin-face5-white.svg");
+      expect(html).toContain("/art/spiderweb-white.svg");
+      expect(html.indexOf("/theme-init.js")).toBeLessThan(
+        html.indexOf("/styles/main.css"),
+      );
       expect(html).toContain("</html>");
     }
     expect(pages.join("")).toContain("presence-dot--online");
     expect(pages.join("")).toContain("presence-dot--offline");
     expect(pages[0]).toContain('data-count="42"');
     expect(pages[0]).toContain("0 0 0 0 4 2");
-    expect(pages[0]).toMatch(/data-halloween-art="(?:pumpkin|skull|skull-white|ghost|tombstone|witch-hat|cauldron|bats)"/);
+    expect(pages[0]).toContain("pager.exe");
+    expect(pages[0]).toContain("data-feed");
+    expect(pages[0]).toContain('data-signed-in="true"');
+    expect(pages[0]).toContain("data-live-pill");
+    expect(pages[0]).toContain("data-feed-live");
+    expect(pages[0]).toContain(
+      'data-post-id="00000000-0000-4000-8000-000000000002"',
+    );
+    expect(pages[0]).toMatch(
+      /data-halloween-art="(?:pumpkin|skull|skull-white|ghost|tombstone|witch-hat|cauldron|bats)"/,
+    );
     expect(pages[5]).toContain("version_picker.exe");
-    expect(pages[5]).toContain('data-changelog-release');
+    expect(pages[5]).toContain("data-changelog-release");
     expect(pages[5]).toContain("Version 0.4.0");
     expect(pages[5]).toContain("Version 0.5.0");
     expect(pages[5]).toContain("ONLINE · READ ONLY");
@@ -172,6 +197,30 @@ describe("server-rendered pages", () => {
     expect(adminChangelog).toContain("/changelog/0.5.0/edit");
     expect(emptyChangelog).toContain("No transmissions archived yet.");
     expect(emptyChangelog).toContain("Nothing filed yet.");
+  });
+
+  it("exposes the VAPID public key only when the pager is configured", async () => {
+    const [withoutKey, withKey] = await Promise.all([
+      render("home.ejs", {
+        ...common,
+        title: "Timeline",
+        posts: [post],
+        visitorCount: 1,
+        composeError: null,
+      }),
+      render("home.ejs", {
+        ...common,
+        vapidPublicKey: "B".repeat(87),
+        title: "Timeline",
+        posts: [post],
+        visitorCount: 1,
+        composeError: null,
+      }),
+    ]);
+
+    expect(withoutKey).not.toContain("vapid-public-key");
+    expect(withKey).toContain('meta name="vapid-public-key" content="');
+    expect(withKey).toContain("B".repeat(87));
   });
 });
 

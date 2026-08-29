@@ -18,6 +18,7 @@ import { pool } from "./db/client.js";
 import { csrfProtection, webLocals } from "./middleware/web.js";
 import { authRouter } from "./routes/auth.js";
 import { changelogRouter } from "./routes/changelog.js";
+import { pushRouter } from "./routes/pushRoutes.js";
 import { siteRouter } from "./routes/site.js";
 
 const rootDirectory = path.resolve(
@@ -67,6 +68,8 @@ export function createApp() {
             styleSrc: ["'self'"],
             imgSrc: ["'self'", "data:"],
             fontSrc: ["'self'"],
+            connectSrc: ["'self'"],
+            workerSrc: ["'self'"],
             objectSrc: ["'none'"],
             baseUri: ["'self'"],
             formAction: ["'self'"],
@@ -84,6 +87,15 @@ export function createApp() {
       immutable: false,
       maxAge: isProduction ? "1h" : 0,
       index: false,
+      setHeaders(response, filePath) {
+        if (path.basename(filePath) === "service-worker.js") {
+          response.setHeader(
+            "Cache-Control",
+            "no-cache, no-store, must-revalidate",
+          );
+          response.setHeader("Service-Worker-Allowed", "/");
+        }
+      },
     }),
   );
   app.use(express.urlencoded({ extended: false, limit: "16kb" }));
@@ -121,9 +133,16 @@ export function createApp() {
   app.use(csrfProtection);
   app.use(authRouter);
   app.use(changelogRouter);
+  app.use(pushRouter);
   app.use(siteRouter);
 
-  app.use((_req, res) => {
+  app.use((req, res) => {
+    if (req.accepts(["html", "json"]) === "json") {
+      res
+        .status(404)
+        .json({ error: "That page drifted off the information superhighway." });
+      return;
+    }
     res.status(404).render("errors/error", {
       title: "Page not found",
       status: 404,
@@ -135,6 +154,13 @@ export function createApp() {
     (error: unknown, req: Request, res: Response, _next: NextFunction) => {
       req.log.error({ err: error }, "Unhandled request error");
       if (res.headersSent) return;
+      if (req.accepts(["html", "json"]) === "json") {
+        res.status(500).json({
+          error:
+            "The modem made a strange noise. Please try again in a moment.",
+        });
+        return;
+      }
       res.status(500).render("errors/error", {
         title: "Something went wrong",
         status: 500,

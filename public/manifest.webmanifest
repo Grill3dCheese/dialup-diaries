@@ -1,0 +1,18 @@
+{
+  "name": "Dialup Diaries",
+  "short_name": "Dialup",
+  "description": "Thoughtful posts, tiny joys, and your own corner of the web.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#fff6d8",
+  "theme_color": "#fff6d8",
+  "icons": [
+    {
+      "src": "/art/skull-white.webp",
+      "sizes": "512x512",
+      "type": "image/webp",
+      "purpose": "any"
+    }
+  ]
+}

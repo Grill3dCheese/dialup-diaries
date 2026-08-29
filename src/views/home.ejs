@@ -33,6 +33,18 @@
       <div><span aria-hidden="true">☻</span> cautiously optimistic</div>
       <small>updated 2 minutes ago</small>
     </section>
+
+    <section class="pager-card window-panel" data-pager-card hidden>
+      <div class="window-title"><span>pager.exe</span><span aria-hidden="true">_ □ ×</span></div>
+      <div class="pager-card__body">
+        <span class="eyebrow">GUESTBOOK PAGER</span>
+        <p data-pager-card-copy>Get a ding on this machine when a new diary entry hits the timeline.</p>
+        <button class="pager-toggle pager-toggle--panel" type="button" data-push-toggle hidden aria-pressed="false" aria-label="Turn on guestbook pager notifications" title="Turn on guestbook pager notifications">
+          <span class="pager-toggle__led" aria-hidden="true"></span>
+          <span data-push-toggle-label>PAGER OFF</span>
+        </button>
+      </div>
+    </section>
   </aside>
 
   <section class="timeline" aria-labelledby="timeline-heading">
@@ -41,7 +53,7 @@
         <span class="eyebrow">THE WORLD WIDE WEB</span>
         <h1 id="timeline-heading">Today on the timeline</h1>
       </div>
-      <span class="live-pill"><i></i><span class="live-pill-text">LIVE</span></span>
+      <span class="live-pill" data-live-pill><i></i><span class="live-pill-text">LIVE</span></span>
     </div>
 
     <% if (currentUser) { %>
@@ -64,7 +76,8 @@
     </form>
     <% } %>
 
-    <div class="feed" data-feed>
+    <p class="visually-hidden" aria-live="polite" data-feed-live></p>
+    <div class="feed" data-feed data-signed-in="<%= currentUser ? 'true' : 'false' %>">
       <% if (posts.length === 0) { %>
       <div class="empty-state">
         <span aria-hidden="true">✦</span>

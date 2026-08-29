@@ -4,12 +4,17 @@ import {
   check,
   date,
   index,
+  inet,
+  integer,
   json,
   jsonb,
+  pgEnum,
   pgTable,
   primaryKey,
+  smallint,
   text,
   timestamp,
+  unique,
   uniqueIndex,
   uuid,
   varchar,
@@ -145,5 +150,48 @@ export const changelogReleases = pgTable(
   ],
 );
 
+export const browserPlatformEnum = pgEnum("browser_platform", [
+  "chrome",
+  "firefox",
+  "safari",
+  "edge",
+  "other",
+]);
+
+export const pushSubscriptions = pgTable(
+  "push_subscriptions",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id").references(() => users.id, { onDelete: "cascade" }),
+    endpoint: text("endpoint").notNull(),
+    p256dh: varchar("p256dh", { length: 256 }).notNull(),
+    auth: varchar("auth", { length: 128 }).notNull(),
+    platform: browserPlatformEnum("platform").notNull().default("other"),
+    userAgent: text("user_agent"),
+    ipAddress: inet("ip_address"),
+    isActive: boolean("is_active").notNull().default(true),
+    failuresCount: smallint("failures_count").notNull().default(0),
+    missedNotificationsCount: integer("missed_notifications_count")
+      .notNull()
+      .default(0),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    lastNotifiedAt: timestamp("last_notified_at", { withTimezone: true }),
+  },
+  (table) => [
+    unique("unique_endpoint").on(table.endpoint),
+    index("idx_push_subs_user_id")
+      .on(table.userId)
+      .where(sql`${table.isActive} = TRUE`),
+    index("idx_push_subs_active_delivery").on(table.isActive),
+    check(
+      "push_subscriptions_missed_notifications_count_check",
+      sql`${table.missedNotificationsCount} >= 0`,
+    ),
+  ],
+);
+
 export type User = typeof users.$inferSelect;
 export type Post = typeof posts.$inferSelect;
+export type BrowserPlatform = (typeof browserPlatformEnum.enumValues)[number];
+export type PushSubscription = typeof pushSubscriptions.$inferSelect;

@@ -7,7 +7,15 @@
   <meta name="description" content="Dialup Diaries — thoughtful posts, tiny joys, and your own corner of the web.">
   <meta name="theme-color" content="#fff6d8">
   <meta name="color-scheme" content="light dark">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Dialup Diaries">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="apple-touch-icon" href="/art/dialup-diaries-logo.jpeg">
   <meta name="csrf-token" content="<%= csrfToken %>">
+  <% if (locals.vapidPublicKey) { %>
+  <meta name="vapid-public-key" content="<%= vapidPublicKey %>">
+  <% } %>
   <title><%= title %> · Dialup Diaries</title>
   <script src="/theme-init.js"></script>
   <link rel="stylesheet" href="/styles/main.css">
@@ -80,11 +88,20 @@
       <span class="status-led-disconnected" aria-hidden="true"></span>
       <span>DISCONNECTED</span>
       <% } %>
-      <span aria-hidden="true">·</span>
-      <span>A DIALUP DEITY, IF YOU WILL ^_^</span>
+      <span class="status-strip__tagline" aria-hidden="true">·</span>
+      <span class="status-strip__tagline">A DIALUP DEITY, IF YOU WILL ^_^</span>
+      <button class="pager-toggle" type="button" data-push-toggle hidden aria-pressed="false" aria-label="Turn on guestbook pager notifications" title="Turn on guestbook pager notifications">
+        <span class="pager-toggle__led" aria-hidden="true"></span>
+        <span data-push-toggle-label>PAGER OFF</span>
+      </button>
       <span class="status-time"><%= new Date().toLocaleDateString('en', { weekday: 'long', month: 'short', day: 'numeric' }) %></span>
     </div>
   </header>
+
+  <aside class="pager-hint" data-pager-hint hidden>
+    <span class="pager-hint__label">pager.exe</span>
+    <p data-pager-hint-body></p>
+  </aside>
 
   <% if (flash) { %>
   <div class="flash flash--<%= flash.kind %>" role="status" data-flash>
