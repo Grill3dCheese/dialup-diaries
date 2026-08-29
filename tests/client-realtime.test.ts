@@ -11,6 +11,14 @@ import {
   halloweenArtForPostId,
   initialsFromName,
   isBlogPostPayload,
+  isBatchCounterUpdatesPayload,
+  isCounterUpdatePayload,
+  isGuestbookEntryPayload,
+  applyBatchCounterUpdates,
+  applyCounterUpdate,
+  applyGuestbookEntry,
+  noteLocalCounterDelta,
+  resetLocalCounterDeltas,
 } from "../src/client/socket-feed.js";
 
 const samplePost = {
@@ -62,6 +70,179 @@ describe("live blog payload guards", () => {
   });
 });
 
+describe("live counter and guestbook payload guards", () => {
+  const sampleCounter = {
+    targetId: samplePost.id,
+    type: "like" as const,
+    newCount: 4,
+  };
+  const sampleBatchItem = {
+    targetId: samplePost.id,
+    likesDelta: 2,
+    retweetsDelta: 0,
+    repliesDelta: 0,
+  };
+  const sampleBatch = [sampleBatchItem];
+  const sampleEntry = {
+    entryId: "33333333-3333-4333-8333-333333333333",
+    postId: samplePost.id,
+    authorName: "Sunny Park",
+    authorUsername: "sunny",
+    message: "Leaving a sparkle in the guestbook.",
+    createdAt: "2026-08-29T21:00:00.000Z",
+  };
+
+  afterEach(() => {
+    resetLocalCounterDeltas();
+  });
+
+  it("accepts well-formed absolute, batched, and guestbook payloads", () => {
+    expect(isCounterUpdatePayload(sampleCounter)).toBe(true);
+    expect(isCounterUpdatePayload({ ...sampleCounter, type: "retweet" })).toBe(
+      true,
+    );
+    expect(isCounterUpdatePayload({ ...sampleCounter, type: "reply" })).toBe(
+      true,
+    );
+    expect(isBatchCounterUpdatesPayload(sampleBatch)).toBe(true);
+    expect(
+      isBatchCounterUpdatesPayload([
+        {
+          targetId: samplePost.id,
+          likesDelta: -1,
+          retweetsDelta: 4,
+          repliesDelta: 1,
+        },
+      ]),
+    ).toBe(true);
+    expect(isGuestbookEntryPayload(sampleEntry)).toBe(true);
+  });
+
+  it("rejects fractional counts, unknown types, and spoofed guestbook fields", () => {
+    expect(isCounterUpdatePayload({ ...sampleCounter, newCount: 1.5 })).toBe(
+      false,
+    );
+    expect(isCounterUpdatePayload({ ...sampleCounter, newCount: -1 })).toBe(
+      false,
+    );
+    expect(isCounterUpdatePayload({ ...sampleCounter, type: "repost" })).toBe(
+      false,
+    );
+    expect(isCounterUpdatePayload({ ...sampleCounter, targetId: "nope" })).toBe(
+      false,
+    );
+    expect(
+      isBatchCounterUpdatesPayload([{ ...sampleBatchItem, likesDelta: 1.25 }]),
+    ).toBe(false);
+    expect(isBatchCounterUpdatesPayload(sampleBatchItem)).toBe(false);
+    expect(
+      isGuestbookEntryPayload({ ...sampleEntry, authorUsername: "bad name" }),
+    ).toBe(false);
+    expect(isGuestbookEntryPayload({ ...sampleEntry, message: "" })).toBe(
+      false,
+    );
+    expect(isGuestbookEntryPayload({ ...sampleEntry, entryId: "nope" })).toBe(
+      false,
+    );
+  });
+
+  it("writes the absolute count onto matching counter nodes and pulses on increase", () => {
+    const { count, classList, setAttribute, root } = fakeCounterNode("2");
+
+    expect(applyCounterUpdate(sampleCounter, root)).toBe(true);
+    expect(count.textContent).toBe("4");
+    expect(setAttribute).toHaveBeenCalledWith("aria-label", "4 likes");
+    expect(classList.add).toHaveBeenCalledWith(
+      "is-live-tick",
+      "is-live-tick--like",
+    );
+  });
+
+  it("does not apply a live tick when the displayed count is already current", () => {
+    const { classList, root } = fakeCounterNode("4");
+
+    expect(applyCounterUpdate(sampleCounter, root)).toBe(true);
+    expect(classList.add).not.toHaveBeenCalled();
+  });
+
+  it("applies batched deltas in one pass and pulses only when the count changes", () => {
+    const { count, classList, root } = fakeCounterNode("4");
+
+    expect(applyBatchCounterUpdates(sampleBatch, root)).toBe(true);
+    expect(count.textContent).toBe("6");
+    expect(classList.add).toHaveBeenCalledWith(
+      "is-live-tick",
+      "is-live-tick--like",
+    );
+  });
+
+  it("nets out the acting client's own like so the 2-second batch cannot double-count", () => {
+    const { count, classList, root } = fakeCounterNode("5");
+    noteLocalCounterDelta(samplePost.id, "like", 1);
+
+    expect(
+      applyBatchCounterUpdates(
+        [
+          {
+            targetId: samplePost.id,
+            likesDelta: 1,
+            retweetsDelta: 0,
+            repliesDelta: 0,
+          },
+        ],
+        root,
+      ),
+    ).toBe(false);
+    expect(count.textContent).toBe("5");
+    expect(classList.add).not.toHaveBeenCalled();
+  });
+
+  it("updates off-screen counters without forcing a pulse or layout reflow", () => {
+    const { count, classList, root } = fakeCounterNode("4", {
+      visible: false,
+    });
+
+    expect(applyBatchCounterUpdates(sampleBatch, root)).toBe(true);
+    expect(count.textContent).toBe("6");
+    expect(classList.add).not.toHaveBeenCalled();
+  });
+
+  it("bumps reply counts immediately when guestbook text arrives on a timeline", () => {
+    const { count, root } = fakeCounterNode("1", { type: "reply" });
+
+    expect(applyGuestbookEntry(null, sampleEntry, root)).toBe(false);
+    expect(count.textContent).toBe("2");
+    expect(
+      applyBatchCounterUpdates(
+        [
+          {
+            targetId: samplePost.id,
+            likesDelta: 0,
+            retweetsDelta: 0,
+            repliesDelta: 1,
+          },
+        ],
+        root,
+      ),
+    ).toBe(false);
+    expect(count.textContent).toBe("2");
+  });
+
+  it("keeps guestbook injects on textContent and never innerHTML", () => {
+    const source = readFileSync(
+      path.resolve("src/client/socket-feed.js"),
+      "utf8",
+    );
+    expect(source).toContain("BATCH_COUNTER_UPDATES");
+    expect(source).toContain("GUESTBOOK_ENTRY_CREATED");
+    expect(source).toContain("data-counter");
+    expect(source).toContain("checkVisibility");
+    expect(source).toContain("is-live-entry");
+    expect(source).toContain("textContent = payload.message");
+    expect(source).not.toContain("innerHTML");
+  });
+});
+
 describe("web-push helpers", () => {
   it("round-trips a URL-safe VAPID public key into a Uint8Array", () => {
     const raw = Buffer.alloc(65, 7);
@@ -95,6 +276,9 @@ describe("web-push helpers", () => {
     expect(source).toContain('document.addEventListener("visibilitychange"');
     expect(source).toContain('document.visibilityState === "visible"');
     expect(source).toContain("initSocketFeed();");
+    expect(source).toContain("applyCounterUpdate({");
+    expect(source).toContain("noteLocalCounterDelta(");
+    expect(source).toContain('type: reaction === "like" ? "like" : "retweet"');
     expect(source).toContain("armAllFlashes()");
   });
 
@@ -240,3 +424,34 @@ describe("service worker script", () => {
     expect(source).not.toContain("innerHTML");
   });
 });
+
+function fakeCounterNode(
+  text: string,
+  options: { type?: "like" | "retweet" | "reply"; visible?: boolean } = {},
+) {
+  const type = options.type ?? "like";
+  const setAttribute = vi.fn();
+  const classList = { add: vi.fn(), remove: vi.fn() };
+  const host = {
+    checkVisibility: () => options.visible !== false,
+  };
+  const count = {
+    textContent: text,
+    closest: (selector: string) => {
+      if (selector === "[data-post-id]") return host;
+      return {
+        getAttribute: () => `${text} ${type === "like" ? "likes" : type}`,
+        setAttribute,
+      };
+    },
+    classList,
+    offsetWidth: 12,
+    addEventListener: vi.fn(),
+  };
+  const root = {
+    querySelectorAll: (selector: string) =>
+      selector.includes(`data-counter="${type}"`) ? [count] : [],
+    querySelector: () => null,
+  };
+  return { count, classList, setAttribute, root };
+}

@@ -1,4 +1,4 @@
-import { Router, type Response } from "express";
+import { Router, type Request, type Response } from "express";
 import { z } from "zod";
 import { requireAuth } from "../middleware/web.js";
 import {
@@ -13,7 +13,13 @@ import {
   updateProfile,
 } from "../services/posts.js";
 import { pushNotificationService } from "../services/pushNotificationService.js";
-import { socketService, toBlogPostPayload } from "../services/socketService.js";
+import {
+  reactionToCounterKind,
+  socketService,
+  toBlogPostPayload,
+  toGuestbookEntryPayload,
+  toggleDelta,
+} from "../services/socketService.js";
 import { getUniqueVisitorCount } from "../services/visitors.js";
 import {
   commentSchema,
@@ -121,7 +127,30 @@ siteRouter.post("/posts/:postId/comments", requireAuth, async (req, res) => {
       error: firstError(parsed.error),
     });
   }
-  await createComment(parsedId.data, req.currentUser!.id, parsed.data.body);
+  const created = await createComment(
+    parsedId.data,
+    req.currentUser!.id,
+    parsed.data.body,
+  );
+  if (created) {
+    socketService.queueCounterDelta(parsedId.data, "reply", 1);
+    queueSocketBroadcast(
+      req,
+      { postId: parsedId.data, commentId: created.id },
+      () => {
+        socketService.broadcastGuestbookEntry(
+          toGuestbookEntryPayload({
+            entryId: created.id,
+            postId: parsedId.data,
+            authorName: req.currentUser!.displayName,
+            authorUsername: req.currentUser!.username,
+            message: parsed.data.body,
+            createdAt: created.createdAt,
+          }),
+        );
+      },
+    );
+  }
   return res.redirect(303, `/posts/${parsedId.data}#comments`);
 });
 
@@ -153,6 +182,11 @@ siteRouter.post(
       reaction === "like" ? "likes" : "reposts",
       parsedId.data,
       req.currentUser!.id,
+    );
+    socketService.queueCounterDelta(
+      parsedId.data,
+      reactionToCounterKind(reaction),
+      toggleDelta(result.active),
     );
     return res.json(result);
   },
@@ -201,6 +235,23 @@ siteRouter.post("/u/:username", requireAuth, async (req, res) => {
 
 function firstParam(value: string | string[] | undefined) {
   return Array.isArray(value) ? (value[0] ?? "") : (value ?? "");
+}
+
+function queueSocketBroadcast(
+  req: Request,
+  context: Record<string, unknown>,
+  emit: () => void,
+): void {
+  setImmediate(() => {
+    try {
+      emit();
+    } catch (error) {
+      req.log.error(
+        { err: error, ...context },
+        "Socket broadcast failed after commit",
+      );
+    }
+  });
 }
 
 function renderNotFound(res: Response) {

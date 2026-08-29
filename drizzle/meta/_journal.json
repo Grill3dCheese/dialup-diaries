@@ -64,6 +64,13 @@
       "when": 1788004800000,
       "tag": "0008_missed_notification_badges",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1788192000000,
+      "tag": "0009_post_metric_counters",
+      "breakpoints": true
     }
   ]
 }

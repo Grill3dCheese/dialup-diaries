@@ -43,7 +43,9 @@ const seededUsers = await db
   .returning();
 
 if (seededUsers.length < 3) {
-  throw new Error("Seed users already exist. Use a fresh database or add content manually.");
+  throw new Error(
+    "Seed users already exist. Use a fresh database or add content manually.",
+  );
 }
 
 const [maya, theo, sunny] = seededUsers;
@@ -71,11 +73,20 @@ const seededPosts = await db
   .returning();
 
 const [mayaPost, theoPost, sunnyPost] = seededPosts;
-if (!mayaPost || !theoPost || !sunnyPost) throw new Error("Seed posts were not created.");
+if (!mayaPost || !theoPost || !sunnyPost)
+  throw new Error("Seed posts were not created.");
 
 await db.insert(comments).values([
-  { postId: mayaPost.id, authorId: theo.id, body: "Personal pages forever. I miss weird little link lists most of all." },
-  { postId: mayaPost.id, authorId: sunny.id, body: "Signing this guestbook with a very tasteful sparkle GIF ✨" },
+  {
+    postId: mayaPost.id,
+    authorId: theo.id,
+    body: "Personal pages forever. I miss weird little link lists most of all.",
+  },
+  {
+    postId: mayaPost.id,
+    authorId: sunny.id,
+    body: "Signing this guestbook with a very tasteful sparkle GIF ✨",
+  },
 ]);
 await db.insert(likes).values([
   { postId: mayaPost.id, userId: theo.id },
@@ -86,6 +97,13 @@ await db.insert(reposts).values([
   { postId: mayaPost.id, userId: sunny.id },
   { postId: theoPost.id, userId: maya.id },
 ]);
+
+await pool.query(`
+  UPDATE posts SET
+    like_count = (SELECT count(*)::int FROM likes WHERE likes.post_id = posts.id),
+    repost_count = (SELECT count(*)::int FROM reposts WHERE reposts.post_id = posts.id),
+    comment_count = (SELECT count(*)::int FROM comments WHERE comments.post_id = posts.id)
+`);
 
 console.log("Seed complete. Demo password for all accounts: DemoPassword123!");
 await pool.end();

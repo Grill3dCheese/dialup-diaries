@@ -4,7 +4,11 @@ import {
   initPushSubscription,
   resetAppBadgeContext,
 } from "./push-subscription.js";
-import { initSocketFeed } from "./socket-feed.js";
+import {
+  initSocketFeed,
+  applyCounterUpdate,
+  noteLocalCounterDelta,
+} from "./socket-feed.js";
 import {
   applyTheme,
   readStoredTheme,
@@ -243,9 +247,17 @@ async function toggleReaction(button) {
     matchingButtons.forEach((matchingButton) => {
       matchingButton.classList.toggle("is-active", result.active);
       matchingButton.setAttribute("aria-pressed", String(result.active));
-      const count = matchingButton.querySelector(".action-count");
-      if (count) count.textContent = String(result.count);
     });
+    applyCounterUpdate({
+      targetId: postId,
+      type: reaction === "like" ? "like" : "retweet",
+      newCount: result.count,
+    });
+    noteLocalCounterDelta(
+      postId,
+      reaction === "like" ? "like" : "retweet",
+      result.active ? 1 : -1,
+    );
 
     if (!reducedMotion) {
       const icon = button.querySelector(".action-icon");

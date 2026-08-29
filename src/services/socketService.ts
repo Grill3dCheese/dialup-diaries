@@ -7,6 +7,9 @@ import { env, isProduction } from "../config/env.js";
 import { pool } from "../db/client.js";
 
 export const BLOG_POST_CREATED = "BLOG_POST_CREATED" as const;
+export const BATCH_COUNTER_UPDATES = "BATCH_COUNTER_UPDATES" as const;
+export const GUESTBOOK_ENTRY_CREATED = "GUESTBOOK_ENTRY_CREATED" as const;
+export const COUNTER_FLUSH_INTERVAL_MS = 2_000;
 const sessionCookieName = "dialup.sid";
 const blogFeedRoom = "blog:feed";
 
@@ -19,9 +22,37 @@ export type BlogPostPayload = {
   authorDisplayName: string;
 };
 
+export type CounterKind = "like" | "retweet" | "reply";
+
+export type CounterDeltaLedger = {
+  likesDelta: number;
+  retweetsDelta: number;
+  repliesDelta: number;
+};
+
+export type BatchCounterUpdate = {
+  targetId: string;
+  likesDelta: number;
+  retweetsDelta: number;
+  repliesDelta: number;
+};
+
+export type BatchCounterUpdatesPayload = BatchCounterUpdate[];
+
+export type GuestbookEntryPayload = {
+  entryId: string;
+  postId: string;
+  authorName: string;
+  authorUsername: string;
+  message: string;
+  createdAt: string;
+};
+
 type ClientToServerEvents = Record<string, never>;
 type ServerToClientEvents = {
   [BLOG_POST_CREATED]: (payload: BlogPostPayload) => void;
+  [BATCH_COUNTER_UPDATES]: (payload: BatchCounterUpdatesPayload) => void;
+  [GUESTBOOK_ENTRY_CREATED]: (payload: GuestbookEntryPayload) => void;
 };
 type InterServerEvents = Record<string, never>;
 type SocketData = {
@@ -56,6 +87,109 @@ const logger = pino({
   level: isProduction ? "info" : "debug",
 });
 
+export function asIntegerDelta(value: number): number {
+  if (!Number.isFinite(value)) {
+    return 0;
+  }
+  return Math.trunc(value);
+}
+
+export function toggleDelta(active: boolean): 1 | -1 {
+  return active ? 1 : -1;
+}
+
+export function createEmptyCounterDeltas(): CounterDeltaLedger {
+  return {
+    likesDelta: 0,
+    retweetsDelta: 0,
+    repliesDelta: 0,
+  };
+}
+
+export function mergeCounterDelta(
+  ledger: Map<string, CounterDeltaLedger>,
+  targetId: string,
+  kind: CounterKind,
+  delta: number,
+): void {
+  const amount = asIntegerDelta(delta);
+  if (targetId.length === 0 || amount === 0) {
+    return;
+  }
+
+  const row = ledger.get(targetId) ?? createEmptyCounterDeltas();
+  switch (kind) {
+    case "like":
+      row.likesDelta += amount;
+      break;
+    case "retweet":
+      row.retweetsDelta += amount;
+      break;
+    case "reply":
+      row.repliesDelta += amount;
+      break;
+  }
+
+  if (
+    row.likesDelta === 0 &&
+    row.retweetsDelta === 0 &&
+    row.repliesDelta === 0
+  ) {
+    ledger.delete(targetId);
+    return;
+  }
+
+  ledger.set(targetId, row);
+}
+
+export function drainCounterLedger(
+  ledger: Map<string, CounterDeltaLedger>,
+): BatchCounterUpdatesPayload {
+  const batch: BatchCounterUpdate[] = [];
+  for (const [targetId, deltas] of ledger) {
+    if (
+      deltas.likesDelta === 0 &&
+      deltas.retweetsDelta === 0 &&
+      deltas.repliesDelta === 0
+    ) {
+      continue;
+    }
+    batch.push({
+      targetId,
+      likesDelta: deltas.likesDelta,
+      retweetsDelta: deltas.retweetsDelta,
+      repliesDelta: deltas.repliesDelta,
+    });
+  }
+  ledger.clear();
+  batch.sort((left, right) => left.targetId.localeCompare(right.targetId));
+  return batch;
+}
+
+export function toGuestbookEntryPayload(entry: {
+  entryId: string;
+  postId: string;
+  authorName: string;
+  authorUsername: string;
+  message: string;
+  createdAt: Date;
+}): GuestbookEntryPayload {
+  return {
+    entryId: entry.entryId,
+    postId: entry.postId,
+    authorName: entry.authorName,
+    authorUsername: entry.authorUsername,
+    message: entry.message,
+    createdAt: entry.createdAt.toISOString(),
+  };
+}
+
+export function reactionToCounterKind(
+  reaction: "like" | "repost",
+): Exclude<CounterKind, "reply"> {
+  return reaction === "like" ? "like" : "retweet";
+}
+
 export function toBlogPostPayload(post: {
   id: string;
   content: string;
@@ -77,11 +211,14 @@ export function toBlogPostPayload(post: {
 export class SocketService {
   private static instance: SocketService | undefined;
   private readonly connections: Map<string, TrackedConnection>;
+  private readonly counterLedger: Map<string, CounterDeltaLedger>;
+  private counterFlushTimer: ReturnType<typeof setInterval> | null = null;
   private io: IoServer | null = null;
   private httpServer: HTTPServer | null = null;
 
   private constructor() {
     this.connections = new Map();
+    this.counterLedger = new Map();
   }
 
   public static getInstance(): SocketService {
@@ -135,24 +272,115 @@ export class SocketService {
 
     this.httpServer = httpServer;
     this.io = io;
+    if (this.counterLedger.size > 0) {
+      this.armCounterFlushTimer();
+    }
   }
 
   public broadcastNewBlogPost(blogData: BlogPostPayload): void {
-    if (!this.io) {
+    this.emitAll(BLOG_POST_CREATED, blogData);
+  }
+
+  public queueCounterDelta(
+    targetId: string,
+    kind: CounterKind,
+    delta: number,
+  ): void {
+    mergeCounterDelta(this.counterLedger, targetId, kind, delta);
+    logger.debug(
+      { targetId, kind, delta, pendingTargets: this.counterLedger.size },
+      "Queued counter delta",
+    );
+    if (this.counterLedger.size > 0) {
+      this.armCounterFlushTimer();
+    }
+  }
+
+  public flushCounterBatch(): void {
+    if (!this.io || this.counterLedger.size === 0) {
       return;
     }
 
-    for (const namespace of this.io._nsps.values()) {
-      namespace.emit(BLOG_POST_CREATED, blogData);
+    const batch = drainCounterLedger(this.counterLedger);
+    if (batch.length === 0) {
+      return;
+    }
+
+    this.emitAll(BATCH_COUNTER_UPDATES, batch);
+    logger.debug({ count: batch.length }, "Flushed BATCH_COUNTER_UPDATES");
+  }
+
+  public broadcastGuestbookEntry(payload: GuestbookEntryPayload): void {
+    this.emitAll(GUESTBOOK_ENTRY_CREATED, payload);
+  }
+
+  public get pendingCounterTargetCount(): number {
+    return this.counterLedger.size;
+  }
+
+  private armCounterFlushTimer(): void {
+    if (this.counterFlushTimer !== null) {
+      return;
+    }
+
+    const timer = setInterval(() => {
+      this.flushCounterBatch();
+    }, COUNTER_FLUSH_INTERVAL_MS);
+    timer.unref();
+    this.counterFlushTimer = timer;
+  }
+
+  private stopCounterFlushTimer(): void {
+    if (this.counterFlushTimer === null) {
+      return;
+    }
+    clearInterval(this.counterFlushTimer);
+    this.counterFlushTimer = null;
+  }
+
+  private emitAll(
+    event: keyof ServerToClientEvents,
+    payload:
+      BlogPostPayload | BatchCounterUpdatesPayload | GuestbookEntryPayload,
+  ): void {
+    const io = this.io;
+    if (!io) {
+      return;
+    }
+
+    try {
+      for (const namespace of io._nsps.values()) {
+        switch (event) {
+          case BLOG_POST_CREATED:
+            namespace.emit(event, payload as BlogPostPayload);
+            break;
+          case BATCH_COUNTER_UPDATES:
+            namespace.emit(event, payload as BatchCounterUpdatesPayload);
+            break;
+          case GUESTBOOK_ENTRY_CREATED:
+            namespace.emit(event, payload as GuestbookEntryPayload);
+            break;
+        }
+      }
+    } catch (error) {
+      logger.error({ err: error, event }, "Socket broadcast failed");
     }
   }
 
   public close(): void {
+    this.stopCounterFlushTimer();
+    if (this.io) {
+      this.flushCounterBatch();
+    } else {
+      this.counterLedger.clear();
+    }
+
     const io = this.io;
     const httpServer = this.httpServer;
     this.io = null;
     this.httpServer = null;
     this.connections.clear();
+    this.counterLedger.clear();
 
     if (httpServer) {
       httpServer.off("error", this.onHttpServerError);

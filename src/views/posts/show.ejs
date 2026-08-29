@@ -3,11 +3,14 @@
   <a class="back-link link-hover" href="/">← Back to the timeline</a>
   <%- include('../partials/post-card', { post, cardIndex: 'detail', showFull: true }) %>
 
-  <section class="comments" id="comments">
+  <section class="comments" id="comments" data-guestbook data-post-id="<%= post.id %>">
     <header>
       <div>
         <span class="eyebrow">GUESTBOOK ENTRIES</span>
-        <h1><%= comments.length %> <%= comments.length === 1 ? 'reply' : 'replies' %></h1>
+        <h1>
+          <span data-guestbook-count data-counter="reply"><%= comments.length %></span>
+          <span data-guestbook-count-label><%= comments.length === 1 ? 'reply' : 'replies' %></span>
+        </h1>
       </div>
       <span aria-hidden="true">✎</span>
     </header>
@@ -30,14 +33,14 @@
     <div class="sign-in-prompt"><a href="/login">Sign in</a> to join this conversation.</div>
     <% } %>
 
-    <div class="comment-list">
+    <div class="comment-list" data-guestbook-list>
       <% if (!comments.length) { %>
       <div class="empty-state empty-state--small">
         <p>No replies yet. You could start something good.</p>
       </div>
       <% } %>
       <% comments.forEach((comment) => { %>
-      <article class="comment">
+      <article class="comment" data-entry-id="<%= comment.id %>">
         <a class="avatar" href="/u/<%= comment.username %>">
           <span><%= initials(comment.displayName) %></span>
           <i class="presence-dot presence-dot--<%= comment.isOnline ? 'online' : 'offline' %>" role="img" aria-label="<%= comment.displayName %> is <%= comment.isOnline ? 'online' : 'offline' %>" title="<%= comment.isOnline ? 'Online now' : 'Offline' %>"></i>

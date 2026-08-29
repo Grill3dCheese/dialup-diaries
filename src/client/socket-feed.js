@@ -1,10 +1,20 @@
 import { io } from "socket.io-client";
 
 export const BLOG_POST_CREATED = "BLOG_POST_CREATED";
+export const BATCH_COUNTER_UPDATES = "BATCH_COUNTER_UPDATES";
+export const GUESTBOOK_ENTRY_CREATED = "GUESTBOOK_ENTRY_CREATED";
+const LOCAL_DELTA_TTL_MS = 3_000;
+const localCounterDeltas = new Map();
 
 const usernamePattern = /^[a-zA-Z0-9_]{3,24}$/;
 const uuidPattern =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const counterKinds = new Set(["like", "retweet", "reply"]);
+const counterAriaLabels = {
+  like: (count) => `${count} likes`,
+  retweet: (count) => `${count} reposts`,
+  reply: (count) => `${count} comments`,
+};
 const halloweenArtOptions = [
   "pumpkin",
   "skull",
@@ -22,6 +32,13 @@ const repostIconPath =
 const likeIconPath =
   "M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1.1L12 21l7.8-7.5 1.1-1.1a5.5 5.5 0 0 0-.1-7.8Z";
 
+function escapeSelector(value) {
+  if (typeof CSS !== "undefined" && typeof CSS.escape === "function") {
+    return CSS.escape(value);
+  }
+  return String(value).replaceAll("\\", "\\\\").replaceAll('"', '\\"');
+}
+
 export function isBlogPostPayload(value) {
   if (typeof value !== "object" || value === null) return false;
   return (
@@ -38,6 +55,55 @@ export function isBlogPostPayload(value) {
     typeof value.authorDisplayName === "string" &&
     value.authorDisplayName.trim().length > 0 &&
     value.authorDisplayName.length <= 50
+  );
+}
+
+export function isCounterUpdatePayload(value) {
+  if (typeof value !== "object" || value === null) return false;
+  return (
+    typeof value.targetId === "string" &&
+    uuidPattern.test(value.targetId) &&
+    typeof value.type === "string" &&
+    counterKinds.has(value.type) &&
+    typeof value.newCount === "number" &&
+    Number.isInteger(value.newCount) &&
+    value.newCount >= 0 &&
+    value.newCount <= Number.MAX_SAFE_INTEGER
+  );
+}
+
+export function isBatchCounterUpdateItem(value) {
+  if (typeof value !== "object" || value === null) return false;
+  return (
+    typeof value.targetId === "string" &&
+    uuidPattern.test(value.targetId) &&
+    isIntegerDelta(value.likesDelta) &&
+    isIntegerDelta(value.retweetsDelta) &&
+    isIntegerDelta(value.repliesDelta)
+  );
+}
+
+export function isBatchCounterUpdatesPayload(value) {
+  return Array.isArray(value) && value.every(isBatchCounterUpdateItem);
+}
+
+export function isGuestbookEntryPayload(value) {
+  if (typeof value !== "object" || value === null) return false;
+  return (
+    typeof value.entryId === "string" &&
+    uuidPattern.test(value.entryId) &&
+    typeof value.postId === "string" &&
+    uuidPattern.test(value.postId) &&
+    typeof value.authorName === "string" &&
+    value.authorName.trim().length > 0 &&
+    value.authorName.length <= 50 &&
+    typeof value.authorUsername === "string" &&
+    usernamePattern.test(value.authorUsername) &&
+    typeof value.message === "string" &&
+    value.message.length > 0 &&
+    value.message.length <= 1000 &&
+    typeof value.createdAt === "string" &&
+    !Number.isNaN(Date.parse(value.createdAt))
   );
 }
 
@@ -141,7 +207,7 @@ export function createLivePostCard(payload, signedIn) {
 
 export function insertBlogPost(feed, payload) {
   if (!feed || !isBlogPostPayload(payload)) return false;
-  if (feed.querySelector(`[data-post-id="${CSS.escape(payload.id)}"]`)) {
+  if (feed.querySelector(`[data-post-id="${escapeSelector(payload.id)}"]`)) {
     return false;
   }
 
@@ -161,9 +227,94 @@ export function insertBlogPost(feed, payload) {
   return true;
 }
 
+export function applyCounterUpdate(payload, root) {
+  if (!isCounterUpdatePayload(payload)) return false;
+  const scope = root ?? globalThis.document;
+  const counters = findCounters(scope, payload.targetId, payload.type);
+  if (counters.length === 0) return false;
+
+  let changed = false;
+  for (const node of counters) {
+    if (
+      writeCountToNode(node, payload.type, payload.newCount, {
+        pulseOnIncrease: true,
+        pulseOnChange: false,
+      })
+    ) {
+      changed = true;
+    }
+  }
+
+  if (payload.type === "reply") {
+    syncGuestbookCountLabel(scope, payload.targetId, payload.newCount);
+  }
+
+  return changed || counters.length > 0;
+}
+
+export function applyBatchCounterUpdates(payload, root) {
+  if (!isBatchCounterUpdatesPayload(payload)) return false;
+  const scope = root ?? globalThis.document;
+  if (!scope?.querySelectorAll) return false;
+
+  let applied = false;
+  for (const item of payload) {
+    if (applyCounterDeltas(item, scope)) applied = true;
+  }
+  return applied;
+}
+
+export function noteLocalCounterDelta(targetId, type, delta) {
+  if (typeof targetId !== "string" || !counterKinds.has(type)) return;
+  const amount = Number.isFinite(delta) ? Math.trunc(delta) : 0;
+  if (amount === 0) return;
+
+  const key = pendingKey(targetId, type);
+  const existing = localCounterDeltas.get(key);
+  localCounterDeltas.set(key, {
+    delta: (existing?.delta ?? 0) + amount,
+    expiresAt: Date.now() + LOCAL_DELTA_TTL_MS,
+  });
+}
+
+export function resetLocalCounterDeltas() {
+  localCounterDeltas.clear();
+}
+
+export function applyGuestbookEntry(guestbook, payload, root) {
+  if (!isGuestbookEntryPayload(payload)) return false;
+  const inserted = insertGuestbookEntry(guestbook, payload);
+  noteLocalCounterDelta(payload.postId, "reply", 1);
+  if (inserted || !guestbook) {
+    writeCounterDelta(payload.postId, "reply", 1, root ?? globalThis.document);
+  }
+  return inserted;
+}
+
+export function insertGuestbookEntry(guestbook, payload) {
+  if (!guestbook || !isGuestbookEntryPayload(payload)) return false;
+  if (guestbook.dataset.postId !== payload.postId) return false;
+
+  const list = guestbook.querySelector("[data-guestbook-list]");
+  if (!list) return false;
+  if (
+    list.querySelector(`[data-entry-id="${escapeSelector(payload.entryId)}"]`)
+  ) {
+    return false;
+  }
+
+  list.querySelector(".empty-state")?.remove();
+  list.prepend(createLiveGuestbookEntry(payload));
+  return true;
+}
+
 export function initSocketFeed() {
   const feed = document.querySelector("[data-feed]");
-  if (!feed) return null;
+  const guestbook = document.querySelector("[data-guestbook]");
+  const hasLiveSurface = document.querySelector(
+    "[data-post-id], [data-counter]",
+  );
+  if (!feed && !guestbook && !hasLiveSurface) return null;
 
   const socket = io({
     path: "/socket.io",
@@ -175,7 +326,25 @@ export function initSocketFeed() {
   });
 
   socket.on(BLOG_POST_CREATED, (payload) => {
-    insertBlogPost(feed, payload);
+    try {
+      if (feed) insertBlogPost(feed, payload);
+    } catch {
+      // Keep the tab alive if a single payload is malformed.
+    }
+  });
+  socket.on(BATCH_COUNTER_UPDATES, (payload) => {
+    try {
+      applyBatchCounterUpdates(payload);
+    } catch {
+      // Counter sync must never take down the rest of the page.
+    }
+  });
+  socket.on(GUESTBOOK_ENTRY_CREATED, (payload) => {
+    try {
+      applyGuestbookEntry(guestbook, payload);
+    } catch {
+      // Guestbook inject is best-effort.
+    }
   });
 
   const livePill = document.querySelector("[data-live-pill]");
@@ -227,6 +396,7 @@ function createCommentAction(postHref) {
   icon.append(svgIcon(commentIconPath));
   const count = document.createElement("span");
   count.className = "action-count";
+  count.dataset.counter = "reply";
   count.textContent = "0";
   const label = document.createElement("span");
   label.className = "action-label";
@@ -239,6 +409,7 @@ function createReactionAction(kind, postId, signedIn) {
   const className = `action action--${kind}`;
   const countLabel = kind === "like" ? "likes" : "reposts";
   const verb = kind === "like" ? "Like" : "Repost";
+  const counterType = kind === "like" ? "like" : "retweet";
 
   if (!signedIn) {
     const link = document.createElement("a");
@@ -249,6 +420,7 @@ function createReactionAction(kind, postId, signedIn) {
       link,
       kind === "like" ? likeIconPath : repostIconPath,
       verb,
+      counterType,
     );
     return link;
   }
@@ -264,21 +436,235 @@ function createReactionAction(kind, postId, signedIn) {
     button,
     kind === "like" ? likeIconPath : repostIconPath,
     verb,
+    counterType,
   );
   return button;
 }
 
-function appendActionParts(parent, path, verb) {
+function appendActionParts(parent, path, verb, counterType) {
   const icon = document.createElement("span");
   icon.className = "action-icon";
   icon.append(svgIcon(path));
   const count = document.createElement("span");
   count.className = "action-count";
+  count.dataset.counter = counterType;
   count.textContent = "0";
   const label = document.createElement("span");
   label.className = "action-label";
   label.textContent = verb;
   parent.append(icon, count, label);
+}
+
+function createLiveGuestbookEntry(payload) {
+  const article = document.createElement("article");
+  article.className = "comment is-live-entry";
+  article.dataset.entryId = payload.entryId;
+
+  const displayName = payload.authorName.trim();
+  const profileHref = `/u/${payload.authorUsername}`;
+
+  const avatar = document.createElement("a");
+  avatar.className = "avatar";
+  avatar.href = profileHref;
+  const avatarLabel = document.createElement("span");
+  avatarLabel.textContent = initialsFromName(displayName) || "?";
+  const presence = document.createElement("i");
+  presence.className = "presence-dot presence-dot--online";
+  presence.setAttribute("role", "img");
+  presence.setAttribute("aria-label", `${displayName} is online`);
+  presence.title = "Online now";
+  avatar.append(avatarLabel, presence);
+
+  const body = document.createElement("div");
+  const header = document.createElement("header");
+  const nameLink = document.createElement("a");
+  nameLink.href = profileHref;
+  const strong = document.createElement("strong");
+  strong.textContent = displayName;
+  nameLink.append(strong);
+  const username = document.createElement("span");
+  username.textContent = `@${payload.authorUsername}`;
+  const time = document.createElement("time");
+  time.dateTime = payload.createdAt;
+  time.textContent = formatPostDate(payload.createdAt);
+  header.append(nameLink, username, time);
+
+  const message = document.createElement("p");
+  message.textContent = payload.message;
+  body.append(header, message);
+  article.append(avatar, body);
+  return article;
+}
+
+function pulseCounter(node, type) {
+  if (typeof node.classList?.add !== "function") return;
+  node.classList.remove(
+    "is-live-tick",
+    "is-live-tick--like",
+    "is-live-tick--retweet",
+    "is-live-tick--reply",
+  );
+  void node.offsetWidth;
+  node.classList.add("is-live-tick", `is-live-tick--${type}`);
+  if (typeof node.addEventListener !== "function") return;
+  node.addEventListener(
+    "animationend",
+    () => {
+      node.classList.remove("is-live-tick", `is-live-tick--${type}`);
+    },
+    { once: true },
+  );
+}
+
+function isIntegerDelta(value) {
+  return (
+    typeof value === "number" &&
+    Number.isInteger(value) &&
+    value >= Number.MIN_SAFE_INTEGER &&
+    value <= Number.MAX_SAFE_INTEGER
+  );
+}
+
+function pendingKey(targetId, type) {
+  return `${targetId}:${type}`;
+}
+
+function takePendingLocalDelta(targetId, type) {
+  const key = pendingKey(targetId, type);
+  const existing = localCounterDeltas.get(key);
+  if (!existing) return 0;
+  localCounterDeltas.delete(key);
+  if (Date.now() > existing.expiresAt) return 0;
+  return existing.delta;
+}
+
+function findCounters(scope, targetId, type) {
+  if (!scope?.querySelectorAll) return [];
+  return [
+    ...scope.querySelectorAll(
+      `[data-post-id="${escapeSelector(targetId)}"] [data-counter="${type}"]`,
+    ),
+  ];
+}
+
+function applyCounterDeltas(item, scope) {
+  let applied = false;
+  if (applyKindDelta(item.targetId, "like", item.likesDelta, scope)) {
+    applied = true;
+  }
+  if (applyKindDelta(item.targetId, "retweet", item.retweetsDelta, scope)) {
+    applied = true;
+  }
+  if (applyKindDelta(item.targetId, "reply", item.repliesDelta, scope)) {
+    applied = true;
+  }
+  return applied;
+}
+
+function applyKindDelta(targetId, type, delta, scope) {
+  const pending = delta === 0 ? 0 : takePendingLocalDelta(targetId, type);
+  const net = delta - pending;
+  if (net === 0) return false;
+  return writeCounterDelta(targetId, type, net, scope);
+}
+
+function writeCounterDelta(targetId, type, delta, scope) {
+  const counters = findCounters(scope, targetId, type);
+  if (counters.length === 0) return false;
+
+  let changed = false;
+  let lastCount = null;
+  for (const node of counters) {
+    const previous = Number.parseInt(node.textContent ?? "", 10);
+    const base = Number.isFinite(previous) ? previous : 0;
+    const nextCount = clampReplyCount(
+      scope,
+      targetId,
+      type,
+      Math.max(0, base + delta),
+    );
+    if (
+      writeCountToNode(node, type, nextCount, {
+        pulseOnIncrease: false,
+        pulseOnChange: true,
+      })
+    ) {
+      changed = true;
+    }
+    lastCount = nextCount;
+  }
+
+  if (type === "reply" && lastCount !== null) {
+    syncGuestbookCountLabel(scope, targetId, lastCount);
+  }
+
+  return changed || counters.length > 0;
+}
+
+function writeCountToNode(node, type, nextCount, pulse) {
+  const previous = Number.parseInt(node.textContent ?? "", 10);
+  const nextLabel = String(nextCount);
+  const changed = node.textContent !== nextLabel;
+  if (changed) {
+    node.textContent = nextLabel;
+  }
+
+  const action = node.closest?.(".action");
+  const aria = action?.getAttribute("aria-label") ?? "";
+  if (action && !aria.startsWith("Sign in")) {
+    action.setAttribute("aria-label", counterAriaLabels[type](nextCount));
+  }
+
+  const shouldPulse =
+    changed &&
+    isNodeVisible(node) &&
+    ((pulse.pulseOnChange && nextCount !== previous) ||
+      (pulse.pulseOnIncrease &&
+        Number.isFinite(previous) &&
+        nextCount > previous));
+  if (shouldPulse) {
+    pulseCounter(node, type);
+  }
+
+  return changed;
+}
+
+function clampReplyCount(scope, targetId, type, nextCount) {
+  if (type !== "reply" || typeof scope.querySelector !== "function") {
+    return nextCount;
+  }
+  const guestbook = scope.querySelector(
+    `[data-guestbook][data-post-id="${escapeSelector(targetId)}"]`,
+  );
+  const list = guestbook?.querySelector?.("[data-guestbook-list]");
+  if (!list?.querySelectorAll) return nextCount;
+  const listCount = list.querySelectorAll("[data-entry-id]").length;
+  if (listCount > 0 && nextCount > listCount) {
+    return listCount;
+  }
+  return nextCount;
+}
+
+function syncGuestbookCountLabel(scope, targetId, count) {
+  const guestbook = scope.querySelector?.(
+    `[data-guestbook][data-post-id="${escapeSelector(targetId)}"]`,
+  );
+  const label = guestbook?.querySelector("[data-guestbook-count-label]");
+  if (label) {
+    label.textContent = count === 1 ? "reply" : "replies";
+  }
+}
+
+function isNodeVisible(node) {
+  const host = node.closest?.("[data-post-id]") ?? node;
+  if (typeof host.checkVisibility === "function") {
+    try {
+      return host.checkVisibility();
+    } catch {
+      return true;
+    }
+  }
+  return true;
 }
 
 function svgIcon(pathD) {

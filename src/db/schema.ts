@@ -28,14 +28,23 @@ export const users = pgTable(
     username: varchar("username", { length: 24 }).notNull(),
     displayName: varchar("display_name", { length: 50 }).notNull(),
     passwordHash: text("password_hash").notNull(),
-    bio: varchar("bio", { length: 280 }).notNull().default("Still customizing my corner of the web."),
-    lastSeenAt: timestamp("last_seen_at", { withTimezone: true }).notNull().defaultNow(),
+    bio: varchar("bio", { length: 280 })
+      .notNull()
+      .default("Still customizing my corner of the web."),
+    lastSeenAt: timestamp("last_seen_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
     isAdmin: boolean("is_admin").notNull().default(false),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (table) => [
     uniqueIndex("users_username_lower_idx").on(table.username),
-    check("users_username_lowercase_check", sql`${table.username} = lower(${table.username})`),
+    check(
+      "users_username_lowercase_check",
+      sql`${table.username} = lower(${table.username})`,
+    ),
   ],
 );
 
@@ -47,10 +56,23 @@ export const posts = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     content: varchar("content", { length: 5000 }).notNull(),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    likeCount: integer("like_count").notNull().default(0),
+    repostCount: integer("repost_count").notNull().default(0),
+    commentCount: integer("comment_count").notNull().default(0),
   },
-  (table) => [index("posts_created_at_idx").on(table.createdAt), index("posts_author_id_idx").on(table.authorId)],
+  (table) => [
+    index("posts_created_at_idx").on(table.createdAt),
+    index("posts_author_id_idx").on(table.authorId),
+    check("posts_like_count_nonnegative", sql`${table.likeCount} >= 0`),
+    check("posts_repost_count_nonnegative", sql`${table.repostCount} >= 0`),
+    check("posts_comment_count_nonnegative", sql`${table.commentCount} >= 0`),
+  ],
 );
 
 export const comments = pgTable(
@@ -64,9 +86,13 @@ export const comments = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     body: varchar("body", { length: 1000 }).notNull(),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
-  (table) => [index("comments_post_id_created_at_idx").on(table.postId, table.createdAt)],
+  (table) => [
+    index("comments_post_id_created_at_idx").on(table.postId, table.createdAt),
+  ],
 );
 
 export const likes = pgTable(
@@ -78,7 +104,9 @@ export const likes = pgTable(
     userId: uuid("user_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (table) => [
     primaryKey({ columns: [table.postId, table.userId] }),
@@ -95,7 +123,9 @@ export const reposts = pgTable(
     userId: uuid("user_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (table) => [
     primaryKey({ columns: [table.postId, table.userId] }),
@@ -115,7 +145,9 @@ export const userSessions = pgTable(
 
 export const visitors = pgTable("visitors", {
   id: uuid("id").primaryKey(),
-  firstSeenAt: timestamp("first_seen_at", { withTimezone: true }).notNull().defaultNow(),
+  firstSeenAt: timestamp("first_seen_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
 });
 
 export const siteMetrics = pgTable("site_metrics", {
@@ -138,8 +170,12 @@ export const changelogReleases = pgTable(
     releasedOn: date("released_on", { mode: "string" }).notNull(),
     summary: varchar("summary", { length: 600 }).notNull(),
     groups: jsonb("groups").$type<StoredChangelogGroup[]>().notNull(),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (table) => [
     uniqueIndex("changelog_releases_version_idx").on(table.version),
@@ -174,8 +210,12 @@ export const pushSubscriptions = pgTable(
     missedNotificationsCount: integer("missed_notifications_count")
       .notNull()
       .default(0),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
     lastNotifiedAt: timestamp("last_notified_at", { withTimezone: true }),
   },
   (table) => [

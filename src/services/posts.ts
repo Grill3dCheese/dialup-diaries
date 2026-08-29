@@ -29,9 +29,9 @@ type FeedRow = {
   author_is_online: boolean;
   reposter_username: string | null;
   reposter_display_name: string | null;
-  like_count: string;
-  repost_count: string;
-  comment_count: string;
+  like_count: string | number;
+  repost_count: string | number;
+  comment_count: string | number;
   liked_by_viewer: boolean;
   reposted_by_viewer: boolean;
 };
@@ -67,9 +67,9 @@ const postProjection = `
   author.last_seen_at >= now() - interval '5 minutes' AS author_is_online,
   reposter.username AS reposter_username,
   reposter.display_name AS reposter_display_name,
-  (SELECT count(*) FROM likes l WHERE l.post_id = p.id) AS like_count,
-  (SELECT count(*) FROM reposts r WHERE r.post_id = p.id) AS repost_count,
-  (SELECT count(*) FROM comments c WHERE c.post_id = p.id) AS comment_count,
+  p.like_count,
+  p.repost_count,
+  p.comment_count,
   EXISTS(SELECT 1 FROM likes l WHERE l.post_id = p.id AND l.user_id = $1) AS liked_by_viewer,
   EXISTS(SELECT 1 FROM reposts r WHERE r.post_id = p.id AND r.user_id = $1) AS reposted_by_viewer
 `;
@@ -123,54 +123,99 @@ export async function createPost(authorId: string, content: string) {
 }
 
 export async function deletePost(postId: string, authorId: string) {
-  const result = await pool.query("DELETE FROM posts WHERE id = $1 AND author_id = $2", [
-    postId,
-    authorId,
-  ]);
+  const result = await pool.query(
+    "DELETE FROM posts WHERE id = $1 AND author_id = $2",
+    [postId, authorId],
+  );
   return result.rowCount === 1;
 }
+
+const reactionConfig = {
+  likes: { table: "likes", counter: "like_count" },
+  reposts: { table: "reposts", counter: "repost_count" },
+} as const;
 
 export async function toggleReaction(
   kind: "likes" | "reposts",
   postId: string,
   userId: string,
 ) {
-  const client = await pool.connect();
-  try {
-    await client.query("BEGIN");
-    const removed = await client.query(
-      `DELETE FROM ${kind} WHERE post_id = $1 AND user_id = $2 RETURNING post_id`,
-      [postId, userId],
-    );
-    const active = removed.rowCount === 0;
-    if (active) {
-      await client.query(
-        `INSERT INTO ${kind} (post_id, user_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
-        [postId, userId],
-      );
-    }
-    const countResult = await client.query<{ count: string }>(
-      `SELECT count(*) FROM ${kind} WHERE post_id = $1`,
-      [postId],
-    );
-    await client.query("COMMIT");
-    return { active, count: Number(countResult.rows[0]?.count ?? 0) };
-  } catch (error) {
-    await client.query("ROLLBACK");
-    throw error;
-  } finally {
-    client.release();
-  }
+  const { table, counter } = reactionConfig[kind];
+  const result = await pool.query<{ active: boolean; count: string | number }>(
+    `WITH deleted AS (
+       DELETE FROM ${table}
+       WHERE post_id = $1 AND user_id = $2
+       RETURNING 1
+     ), inserted AS (
+       INSERT INTO ${table} (post_id, user_id)
+       SELECT $1, $2
+       WHERE NOT EXISTS (SELECT 1 FROM deleted)
+       ON CONFLICT DO NOTHING
+       RETURNING 1
+     ), bumped AS (
+       UPDATE posts
+       SET ${counter} = GREATEST(
+         ${counter} + CASE
+           WHEN EXISTS (SELECT 1 FROM inserted) THEN 1
+           WHEN EXISTS (SELECT 1 FROM deleted) THEN -1
+           ELSE 0
+         END,
+         0
+       )
+       WHERE id = $1
+       RETURNING ${counter} AS count
+     )
+     SELECT
+       NOT EXISTS (SELECT 1 FROM deleted) AS active,
+       bumped.count
+     FROM bumped`,
+    [postId, userId],
+  );
+  const row = result.rows[0];
+  return {
+    active: Boolean(row?.active),
+    count: Number(row?.count ?? 0),
+  };
 }
 
-export async function createComment(postId: string, authorId: string, body: string) {
-  const result = await pool.query<{ id: string }>(
-    `INSERT INTO comments (post_id, author_id, body)
-     VALUES ($1, $2, $3)
-     RETURNING id`,
+export type CreatedComment = {
+  id: string;
+  createdAt: Date;
+  commentCount: number;
+};
+
+export async function createComment(
+  postId: string,
+  authorId: string,
+  body: string,
+): Promise<CreatedComment | undefined> {
+  const result = await pool.query<{
+    id: string;
+    created_at: Date;
+    comment_count: string | number;
+  }>(
+    `WITH inserted AS (
+       INSERT INTO comments (post_id, author_id, body)
+       VALUES ($1, $2, $3)
+       RETURNING id, created_at
+     ), bumped AS (
+       UPDATE posts
+       SET comment_count = comment_count + 1
+       WHERE id = $1
+       RETURNING comment_count
+     )
+     SELECT inserted.id, inserted.created_at, bumped.comment_count
+     FROM inserted
+     CROSS JOIN bumped`,
     [postId, authorId, body],
   );
-  return result.rows[0]?.id;
+  const row = result.rows[0];
+  if (!row) return undefined;
+  return {
+    id: row.id,
+    createdAt: row.created_at,
+    commentCount: Number(row.comment_count),
+  };
 }
 
 export async function getComments(postId: string) {
@@ -192,7 +237,7 @@ export async function getComments(postId: string) {
      FROM comments c
      JOIN users u ON u.id = c.author_id
      WHERE c.post_id = $1
-     ORDER BY c.created_at ASC`,
+     ORDER BY c.created_at DESC`,
     [postId],
   );
   return result.rows.map((row) => ({
@@ -259,9 +304,8 @@ export async function updateProfile(
   userId: string,
   input: { displayName: string; bio: string },
 ) {
-  await pool.query("UPDATE users SET display_name = $1, bio = $2 WHERE id = $3", [
-    input.displayName,
-    input.bio,
-    userId,
-  ]);
+  await pool.query(
+    "UPDATE users SET display_name = $1, bio = $2 WHERE id = $3",
+    [input.displayName, input.bio, userId],
+  );
 }

@@ -159,6 +159,13 @@ describe("server-rendered pages", () => {
     expect(pages[0]).toContain(
       'data-post-id="00000000-0000-4000-8000-000000000002"',
     );
+    expect(pages[0]).toContain('data-counter="like"');
+    expect(pages[0]).toContain('data-counter="retweet"');
+    expect(pages[0]).toContain('data-counter="reply"');
+    expect(pages[1]).toContain("data-guestbook");
+    expect(pages[1]).toContain("data-guestbook-list");
+    expect(pages[1]).toContain("data-guestbook-count");
+    expect(pages[1]).toContain('data-entry-id="1"');
     expect(pages[0]).toMatch(
       /data-halloween-art="(?:pumpkin|skull|skull-white|ghost|tombstone|witch-hat|cauldron|bats)"/,
     );
@@ -170,6 +177,7 @@ describe("server-rendered pages", () => {
     expect(pages[5]).toContain("Version 0.7.0");
     expect(pages[5]).toContain("Version 0.8.0");
     expect(pages[5]).toContain("Version 0.9.0");
+    expect(pages[5]).toContain("Version 0.10.0");
     expect(pages[5]).toContain("ONLINE · READ ONLY");
     expect(pages[5]).not.toContain("File a new transmission");
     expect(pages[5]).not.toContain("webmaster_desk.exe");

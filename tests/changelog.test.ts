@@ -15,7 +15,7 @@ describe("changelog content", () => {
     expect(versions).toEqual(
       [...versions].sort(compareSemanticVersions).reverse(),
     );
-    expect(versions[0]).toBe("0.9.0");
+    expect(versions[0]).toBe("0.10.0");
   });
 
   it("keeps every release detailed and machine-readable", () => {

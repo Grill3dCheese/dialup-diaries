@@ -66,6 +66,40 @@ export function defaultChangelogEditorGroups() {
 
 export const seedChangelog = [
   {
+    version: "0.10.0",
+    title: "The counters learned to travel in packs",
+    date: "2026-08-29",
+    summary:
+      "Likes, reposts, and guestbook replies now tick live across open tabs—without asking the socket to shout about every single click.",
+    groups: [
+      {
+        kind: "added",
+        label: "New on the web",
+        items: [
+          "Like, repost, and reply counts update on other open tabs without a refresh.",
+          "New guestbook entries appear at the top of the thread as soon as someone signs.",
+        ],
+      },
+      {
+        kind: "changed",
+        label: "Polished pixels",
+        items: [
+          "A count that actually changes gets a short pop animation; off-screen posts skip the flourish so the page stays calm while you scroll.",
+        ],
+      },
+      {
+        kind: "security",
+        label: "Under the hood",
+        items: [
+          "Like, repost, and reply totals are stored as atomic counters on each post, so the timeline does not recount from scratch on every load.",
+          "Socket broadcasts for those counters wait two seconds, then go out as one compact batch instead of an event per click.",
+          "Guestbook text still broadcasts immediately, because handwritten replies are rare compared with button clicks.",
+          "A server restart drops the in-memory batch buffer; PostgreSQL still holds the real totals.",
+        ],
+      },
+    ],
+  },
+  {
     version: "0.9.0",
     title: "The notices learned to hang up",
     date: "2026-08-29",

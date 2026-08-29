@@ -47,7 +47,7 @@
           <span class="action-icon">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4Z"/></svg>
           </span>
-          <span class="action-count"><%= post.commentCount %></span>
+          <span class="action-count" data-counter="reply"><%= post.commentCount %></span>
           <span class="action-label">Reply</span>
         </a>
 
@@ -58,7 +58,7 @@
             <span class="action-icon">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m17 1 4 4-4 4M3 11V9a4 4 0 0 1 4-4h14M7 23l-4-4 4-4m14-2v2a4 4 0 0 1-4 4H3"/></svg>
             </span>
-            <span class="action-count"><%= post.repostCount %></span>
+            <span class="action-count" data-counter="retweet"><%= post.repostCount %></span>
             <span class="action-label">Repost</span>
           </button>
           <button class="action action--like <%= post.likedByViewer ? 'is-active' : '' %>" type="button"
@@ -67,17 +67,17 @@
             <span class="action-icon">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1.1L12 21l7.8-7.5 1.1-1.1a5.5 5.5 0 0 0-.1-7.8Z"/></svg>
             </span>
-            <span class="action-count"><%= post.likeCount %></span>
+            <span class="action-count" data-counter="like"><%= post.likeCount %></span>
             <span class="action-label">Like</span>
           </button>
         <% } else { %>
           <a class="action action--repost" href="/login" aria-label="Sign in to repost">
             <span class="action-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m17 1 4 4-4 4M3 11V9a4 4 0 0 1 4-4h14M7 23l-4-4 4-4m14-2v2a4 4 0 0 1-4 4H3"/></svg></span>
-            <span class="action-count"><%= post.repostCount %></span><span class="action-label">Repost</span>
+            <span class="action-count" data-counter="retweet"><%= post.repostCount %></span><span class="action-label">Repost</span>
           </a>
           <a class="action action--like" href="/login" aria-label="Sign in to like">
             <span class="action-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1.1L12 21l7.8-7.5 1.1-1.1a5.5 5.5 0 0 0-.1-7.8Z"/></svg></span>
-            <span class="action-count"><%= post.likeCount %></span><span class="action-label">Like</span>
+            <span class="action-count" data-counter="like"><%= post.likeCount %></span><span class="action-label">Like</span>
           </a>
         <% } %>
       </footer>
