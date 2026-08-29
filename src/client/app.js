@@ -1,4 +1,5 @@
 import { animate } from "motion/mini";
+import { armAllFlashes, showToast } from "./flash.js";
 import {
   initPushSubscription,
   resetAppBadgeContext,
@@ -105,11 +106,15 @@ function playThemeSwitchSound(theme) {
   });
 }
 
-const changelogReleases = [...document.querySelectorAll("[data-changelog-release]")];
+const changelogReleases = [
+  ...document.querySelectorAll("[data-changelog-release]"),
+];
 const changelogLinks = [...document.querySelectorAll("[data-changelog-link]")];
 
 if (changelogReleases.length > 0) {
-  const requestedRelease = document.getElementById(window.location.hash.slice(1));
+  const requestedRelease = document.getElementById(
+    window.location.hash.slice(1),
+  );
   if (requestedRelease?.matches("[data-changelog-release]")) {
     activateChangelogRelease(requestedRelease, false);
   }
@@ -149,14 +154,18 @@ function activateChangelogRelease(release, updateUrl) {
 
   if (updateUrl && window.matchMedia("(max-width: 800px)").matches) {
     window.requestAnimationFrame(() => {
-      release.scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth", block: "start" });
+      release.scrollIntoView({
+        behavior: reducedMotion ? "auto" : "smooth",
+        block: "start",
+      });
     });
   }
 }
 
 function syncChangelogLinks(releaseId) {
   changelogLinks.forEach((link) => {
-    if (link.hash === `#${releaseId}`) link.setAttribute("aria-current", "true");
+    if (link.hash === `#${releaseId}`)
+      link.setAttribute("aria-current", "true");
     else link.removeAttribute("aria-current");
   });
 }
@@ -204,18 +213,6 @@ document.addEventListener("click", async (event) => {
     readMore.setAttribute("aria-expanded", String(!expanded));
     if (!reducedMotion)
       animate(container, { opacity: [0.72, 1] }, { duration: 0.2 });
-    return;
-  }
-
-  const dismiss = event.target.closest("[data-dismiss]");
-  if (dismiss) {
-    const flash = dismiss.closest("[data-flash]");
-    if (!flash) return;
-    if (reducedMotion) flash.remove();
-    else
-      animate(flash, { opacity: [1, 0], y: [0, -8] }, { duration: 0.18 }).then(
-        () => flash.remove(),
-      );
     return;
   }
 
@@ -276,19 +273,6 @@ async function toggleReaction(button) {
   }
 }
 
-function showToast(message) {
-  document.querySelector("[data-client-toast]")?.remove();
-  const toast = document.createElement("div");
-  toast.className = "flash flash--error";
-  toast.dataset.clientToast = "";
-  toast.setAttribute("role", "alert");
-  toast.textContent = message;
-  document.body.append(toast);
-  if (!reducedMotion)
-    animate(toast, { opacity: [0, 1], y: [-8, 0] }, { duration: 0.2 });
-  window.setTimeout(() => toast.remove(), 4500);
-}
-
 const composer = document.querySelector("[data-composer]");
 const count = document.querySelector("[data-character-count]");
 if (composer && count) {
@@ -299,14 +283,7 @@ if (composer && count) {
   updateCount();
 }
 
-const flash = document.querySelector("[data-flash]");
-if (flash && !reducedMotion) {
-  animate(
-    flash,
-    { opacity: [0, 1], y: [-10, 0], scale: [0.97, 1] },
-    { duration: 0.28 },
-  );
-}
+armAllFlashes();
 
 const visitorCounter = document.querySelector("[data-visitor-counter]");
 if (visitorCounter) {

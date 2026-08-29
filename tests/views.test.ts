@@ -169,6 +169,7 @@ describe("server-rendered pages", () => {
     expect(pages[5]).toContain("Version 0.6.0");
     expect(pages[5]).toContain("Version 0.7.0");
     expect(pages[5]).toContain("Version 0.8.0");
+    expect(pages[5]).toContain("Version 0.9.0");
     expect(pages[5]).toContain("ONLINE · READ ONLY");
     expect(pages[5]).not.toContain("File a new transmission");
     expect(pages[5]).not.toContain("webmaster_desk.exe");
@@ -224,6 +225,24 @@ describe("server-rendered pages", () => {
     expect(withoutKey).not.toContain("vapid-public-key");
     expect(withKey).toContain('meta name="vapid-public-key" content="');
     expect(withKey).toContain("B".repeat(87));
+  });
+
+  it("renders session flash markup the client countdown can arm", async () => {
+    const html = await render("home.ejs", {
+      ...common,
+      title: "Timeline",
+      posts: [post],
+      visitorCount: 1,
+      composeError: null,
+      flash: { kind: "error", message: "Sign in to do that." },
+    });
+
+    expect(html).toContain('class="flash flash--error"');
+    expect(html).toContain("flash__glyph");
+    expect(html).toContain("flash__message");
+    expect(html).toContain("data-flash");
+    expect(html).toContain("data-dismiss");
+    expect(html).toContain("Sign in to do that.");
   });
 });
 

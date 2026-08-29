@@ -1,4 +1,4 @@
-import { count, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import {
   compareSemanticVersions,
   seedChangelog,
@@ -14,7 +14,9 @@ export async function listChangelogReleases() {
   return rows
     .map(toPublicRelease)
     .filter((release): release is ChangelogRelease => release !== null)
-    .sort((left, right) => compareSemanticVersions(right.version, left.version));
+    .sort((left, right) =>
+      compareSemanticVersions(right.version, left.version),
+    );
 }
 
 export async function getChangelogRelease(version: string) {
@@ -78,11 +80,17 @@ export async function deleteChangelogRelease(version: string) {
 }
 
 export async function seedChangelogIfEmpty() {
-  const countResult = await db.select({ value: count() }).from(changelogReleases);
-  if ((countResult[0]?.value ?? 0) > 0) return 0;
+  const existing = await db
+    .select({ version: changelogReleases.version })
+    .from(changelogReleases);
+  const existingVersions = new Set(existing.map((row) => row.version));
+  const missing = seedChangelog.filter(
+    (release) => !existingVersions.has(release.version),
+  );
+  if (missing.length === 0) return 0;
 
   await db.insert(changelogReleases).values(
-    seedChangelog.map((release) => ({
+    missing.map((release) => ({
       version: release.version,
       title: release.title,
       releasedOn: release.date,
@@ -95,7 +103,7 @@ export async function seedChangelogIfEmpty() {
     })),
   );
 
-  return seedChangelog.length;
+  return missing.length;
 }
 
 export function editorValuesFromRelease(release: ChangelogRelease) {
@@ -113,7 +121,9 @@ export function editorValuesFromRelease(release: ChangelogRelease) {
   };
 }
 
-function toPublicRelease(row: typeof changelogReleases.$inferSelect): ChangelogRelease | null {
+function toPublicRelease(
+  row: typeof changelogReleases.$inferSelect,
+): ChangelogRelease | null {
   const groups = changelogGroupsSchema.safeParse(row.groups);
   if (!groups.success) return null;
   return withReleaseDateLabel({

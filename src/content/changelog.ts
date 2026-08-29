@@ -40,7 +40,9 @@ export function formatReleaseDate(date: string) {
   }).format(parsed);
 }
 
-export function withReleaseDateLabel<T extends { date: string }>(release: T): T & { dateLabel: string } {
+export function withReleaseDateLabel<T extends { date: string }>(
+  release: T,
+): T & { dateLabel: string } {
   return { ...release, dateLabel: formatReleaseDate(release.date) };
 }
 
@@ -63,6 +65,38 @@ export function defaultChangelogEditorGroups() {
 }
 
 export const seedChangelog = [
+  {
+    version: "0.9.0",
+    title: "The notices learned to hang up",
+    date: "2026-08-29",
+    summary:
+      "Success notes, errors, and pager alerts now fade themselves away on a countdown—and they wait politely if your cursor is still reading.",
+    groups: [
+      {
+        kind: "added",
+        label: "New on the web",
+        items: [
+          "Every flash notice carries a thin countdown bar along its bottom edge and dismisses itself when the bar runs out.",
+          "Hovering a notice freezes the countdown so you can finish reading; moving away lets it continue from the same moment.",
+        ],
+      },
+      {
+        kind: "changed",
+        label: "Polished pixels",
+        items: [
+          "Success messages, system warnings, and pager errors now share the same auto-dismiss lifestyle instead of one-off timers.",
+          "Technical errors linger a little longer than ordinary notices so there is time to read lock-icon instructions.",
+        ],
+      },
+      {
+        kind: "fixed",
+        label: "Bugs sent to /dev/null",
+        items: [
+          "After a hover-pause, the countdown bar no longer snaps back to its frozen width while the notice fades away.",
+        ],
+      },
+    ],
+  },
   {
     version: "0.8.0",
     title: "The icon keeps score",

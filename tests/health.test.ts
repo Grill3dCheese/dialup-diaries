@@ -20,6 +20,7 @@ describe("health check", () => {
     expect(response.text).toContain("Version 0.6.0");
     expect(response.text).toContain("Version 0.7.0");
     expect(response.text).toContain("Version 0.8.0");
+    expect(response.text).toContain("Version 0.9.0");
     expect(response.text).toContain("ONLINE · READ ONLY");
     expect(response.text).not.toContain("File a new transmission");
   });

@@ -9,9 +9,13 @@ describe("changelog content", () => {
   it("uses unique semantic versions in newest-first order", () => {
     const versions = seedChangelog.map((release) => release.version);
     expect(new Set(versions).size).toBe(versions.length);
-    expect(versions.every((version) => /^\d+\.\d+\.\d+$/.test(version))).toBe(true);
-    expect(versions).toEqual([...versions].sort(compareSemanticVersions).reverse());
-    expect(versions[0]).toBe("0.8.0");
+    expect(versions.every((version) => /^\d+\.\d+\.\d+$/.test(version))).toBe(
+      true,
+    );
+    expect(versions).toEqual(
+      [...versions].sort(compareSemanticVersions).reverse(),
+    );
+    expect(versions[0]).toBe("0.9.0");
   });
 
   it("keeps every release detailed and machine-readable", () => {
@@ -19,7 +23,9 @@ describe("changelog content", () => {
       expect(release.date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
       expect(release.summary.length).toBeGreaterThan(30);
       expect(release.groups.length).toBeGreaterThan(0);
-      expect(release.groups.every((group) => group.items.length > 0)).toBe(true);
+      expect(release.groups.every((group) => group.items.length > 0)).toBe(
+        true,
+      );
     }
   });
 

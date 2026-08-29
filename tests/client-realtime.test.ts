@@ -95,6 +95,7 @@ describe("web-push helpers", () => {
     expect(source).toContain('document.addEventListener("visibilitychange"');
     expect(source).toContain('document.visibilityState === "visible"');
     expect(source).toContain("initSocketFeed();");
+    expect(source).toContain("armAllFlashes()");
   });
 
   it("maps user agents onto the stored browser platform enum", () => {
@@ -172,9 +173,7 @@ describe("resetAppBadgeContext", () => {
 
     expect(clearAppBadge).toHaveBeenCalledOnce();
     expect(fetchMock).toHaveBeenCalledOnce();
-    const call = fetchMock.mock.calls[0] as
-      | [string, RequestInit]
-      | undefined;
+    const call = fetchMock.mock.calls[0] as [string, RequestInit] | undefined;
     expect(call?.[0]).toBe("/api/notifications/read");
     expect(call?.[1]).toMatchObject({
       method: "POST",

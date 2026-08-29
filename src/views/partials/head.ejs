@@ -105,8 +105,8 @@
 
   <% if (flash) { %>
   <div class="flash flash--<%= flash.kind %>" role="status" data-flash>
-    <span><%= flash.kind === 'success' ? '✦' : '!' %></span>
-    <%= flash.message %>
+    <span class="flash__glyph" aria-hidden="true"><%= flash.kind === 'success' ? '✦' : '!' %></span>
+    <span class="flash__message"><%= flash.message %></span>
     <button type="button" aria-label="Dismiss message" data-dismiss>×</button>
   </div>
   <% } %>
