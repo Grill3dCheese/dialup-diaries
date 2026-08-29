@@ -166,6 +166,9 @@ describe("server-rendered pages", () => {
     expect(pages[5]).toContain("data-changelog-release");
     expect(pages[5]).toContain("Version 0.4.0");
     expect(pages[5]).toContain("Version 0.5.0");
+    expect(pages[5]).toContain("Version 0.6.0");
+    expect(pages[5]).toContain("Version 0.7.0");
+    expect(pages[5]).toContain("Version 0.8.0");
     expect(pages[5]).toContain("ONLINE · READ ONLY");
     expect(pages[5]).not.toContain("File a new transmission");
     expect(pages[5]).not.toContain("webmaster_desk.exe");

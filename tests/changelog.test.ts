@@ -11,7 +11,7 @@ describe("changelog content", () => {
     expect(new Set(versions).size).toBe(versions.length);
     expect(versions.every((version) => /^\d+\.\d+\.\d+$/.test(version))).toBe(true);
     expect(versions).toEqual([...versions].sort(compareSemanticVersions).reverse());
-    expect(versions[0]).toBe("0.5.0");
+    expect(versions[0]).toBe("0.8.0");
   });
 
   it("keeps every release detailed and machine-readable", () => {

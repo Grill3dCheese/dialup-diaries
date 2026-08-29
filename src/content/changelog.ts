@@ -64,6 +64,90 @@ export function defaultChangelogEditorGroups() {
 
 export const seedChangelog = [
   {
+    version: "0.8.0",
+    title: "The icon keeps score",
+    date: "2026-08-29",
+    summary:
+      "The Home Screen icon can now keep a running tally of guestbook pages you missed, and it clears itself when you come back.",
+    groups: [
+      {
+        kind: "added",
+        label: "New on the web",
+        items: [
+          "Each pager ding can set a Home Screen badge with the number of notifications this device missed while you were away.",
+          "Opening Dialup Diaries from that icon, or bringing a backgrounded app back to the front, clears the badge.",
+        ],
+      },
+      {
+        kind: "security",
+        label: "Under the hood",
+        items: [
+          "Each active push subscription stores a missed-notification count that increments when a new post is pushed.",
+          "The service worker reads that integer from the push payload and updates the OS badge, falling back to 1 if the payload is corrupt.",
+          "Coming back to the app clears the operating-system badge and tells PostgreSQL this device has been seen, so the missed count returns to zero.",
+        ],
+      },
+    ],
+  },
+  {
+    version: "0.7.0",
+    title: "You've got pager",
+    date: "2026-08-15",
+    summary:
+      "The guestbook can now ding this machine when a new diary entry hits the timeline—even if the tab is closed.",
+    groups: [
+      {
+        kind: "added",
+        label: "New on the web",
+        items: [
+          "A pager.exe toggle opts this browser into Web Push dings for new timeline entries.",
+          "Dialup Diaries can live on the Home Screen as a standalone app, which is how a pocket computer is allowed to ring.",
+        ],
+      },
+      {
+        kind: "changed",
+        label: "Polished pixels",
+        items: [
+          "The pager sits in the status strip and as a retro sidebar card without crowding the reading path.",
+          "iPhone Safari explains that the pager only wakes up after you add the site to Home Screen and open that icon.",
+        ],
+      },
+      {
+        kind: "security",
+        label: "Under the hood",
+        items: [
+          "Push subscriptions are stored per device in PostgreSQL, with VAPID keys kept on the server.",
+          "Only known push service hosts are accepted, and dead endpoints deactivate instead of retrying forever.",
+        ],
+      },
+    ],
+  },
+  {
+    version: "0.6.0",
+    title: "The timeline learned to breathe",
+    date: "2026-08-15",
+    summary:
+      "New diary entries now appear at the top of the feed while you watch, so the guestbook no longer waits for a refresh.",
+    groups: [
+      {
+        kind: "added",
+        label: "New on the web",
+        items: [
+          "Fresh posts slide onto the live timeline as soon as they are published.",
+          "The LIVE indicator keeps its pulse while the socket stays connected.",
+        ],
+      },
+      {
+        kind: "security",
+        label: "Under the hood",
+        items: [
+          "A dedicated Socket.io service broadcasts a sanitized payload after PostgreSQL commits the post.",
+          "The socket handshake stays cookie-aware and isolated from the Express routes, so a noisy socket cannot roll back a successful publish.",
+        ],
+      },
+    ],
+  },
+  {
     version: "0.5.0",
     title: "The webmaster desk is open",
     date: "2026-08-14",
