@@ -32,13 +32,10 @@
         <a class="post-time" href="/posts/<%= post.id %>"><%= formatDate(post.createdAt) %></a>
       </header>
 
-      <div class="post-content" data-expandable>
+      <div class="post-content<%= shouldTruncate ? ' is-collapsed' : '' %>" data-expandable>
+        <div class="markdown-body"><%- renderMarkdown(post.content) %></div>
         <% if (shouldTruncate) { %>
-          <span data-short><%= post.content.slice(0, 420).trimEnd() %>…</span>
-          <span data-full hidden><%= post.content %></span>
           <button class="read-more" type="button" aria-expanded="false">Read the rest</button>
-        <% } else { %>
-          <span><%= post.content %></span>
         <% } %>
       </div>
 

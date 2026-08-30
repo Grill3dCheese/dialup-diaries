@@ -1,4 +1,5 @@
 import { io } from "socket.io-client";
+import { setMarkdownContent } from "./markdown.js";
 
 export const BLOG_POST_CREATED = "BLOG_POST_CREATED";
 export const BATCH_COUNTER_UPDATES = "BATCH_COUNTER_UPDATES";
@@ -364,26 +365,20 @@ export function initSocketFeed() {
 }
 
 function appendPostContent(container, content) {
-  if (content.length <= 420) {
-    const span = document.createElement("span");
-    span.textContent = content;
-    container.append(span);
-    return;
-  }
+  const body = document.createElement("div");
+  body.className = "markdown-body";
+  setMarkdownContent(body, content);
+  container.append(body);
 
-  const short = document.createElement("span");
-  short.dataset.short = "";
-  short.textContent = `${content.slice(0, 420).trimEnd()}…`;
-  const full = document.createElement("span");
-  full.dataset.full = "";
-  full.hidden = true;
-  full.textContent = content;
+  if (content.length <= 420) return;
+
+  container.classList.add("is-collapsed");
   const readMore = document.createElement("button");
   readMore.className = "read-more";
   readMore.type = "button";
   readMore.setAttribute("aria-expanded", "false");
   readMore.textContent = "Read the rest";
-  container.append(short, full, readMore);
+  container.append(readMore);
 }
 
 function createCommentAction(postHref) {
@@ -489,8 +484,9 @@ function createLiveGuestbookEntry(payload) {
   time.textContent = formatPostDate(payload.createdAt);
   header.append(nameLink, username, time);
 
-  const message = document.createElement("p");
-  message.textContent = payload.message;
+  const message = document.createElement("div");
+  message.className = "markdown-body";
+  setMarkdownContent(message, payload.message);
   body.append(header, message);
   article.append(avatar, body);
   return article;

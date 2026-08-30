@@ -1,6 +1,7 @@
 import path from "node:path";
 import ejs from "ejs";
 import { describe, expect, it } from "vitest";
+import { renderMarkdown } from "../src/markdown/render.js";
 import {
   seedChangelog,
   withReleaseDateLabel,
@@ -44,6 +45,7 @@ const common = {
       .map((part) => part[0])
       .join(""),
   formatDate: () => "Jan 1, 12:00 PM",
+  renderMarkdown,
 };
 
 describe("server-rendered pages", () => {
@@ -166,6 +168,10 @@ describe("server-rendered pages", () => {
     expect(pages[1]).toContain("data-guestbook-list");
     expect(pages[1]).toContain("data-guestbook-count");
     expect(pages[1]).toContain('data-entry-id="1"');
+    expect(pages[0]).toContain("markdown-body");
+    expect(pages[0]).toContain("data-md-editor");
+    expect(pages[0]).toContain("Hello from my corner of the web.");
+    expect(pages[1]).toContain("data-md-editor");
     expect(pages[0]).toMatch(
       /data-halloween-art="(?:pumpkin|skull|skull-white|ghost|tombstone|witch-hat|cauldron|bats)"/,
     );
@@ -233,6 +239,37 @@ describe("server-rendered pages", () => {
     expect(withoutKey).not.toContain("vapid-public-key");
     expect(withKey).toContain('meta name="vapid-public-key" content="');
     expect(withKey).toContain("B".repeat(87));
+  });
+
+  it("renders markdown in posts and comments while stripping hostile HTML", async () => {
+    const html = await render("posts/show.ejs", {
+      ...common,
+      title: "Post",
+      post: {
+        ...post,
+        content:
+          "**Hello** from the [web](https://example.com).\n<script>alert(1)</script>",
+      },
+      comments: [
+        {
+          id: "1",
+          body: "*Hi!* <img src=x onerror=alert(1)>",
+          createdAt: new Date(),
+          username: user.username,
+          displayName: user.displayName,
+          isOnline: true,
+        },
+      ],
+      error: null,
+    });
+
+    expect(html).toContain("<strong>Hello</strong>");
+    expect(html).toContain('href="https://example.com"');
+    expect(html).toContain("<em>Hi!</em>");
+    expect(html).not.toContain("<script>alert(1)</script>");
+    expect(html).not.toContain("onerror=alert");
+    expect(html).toContain('name="body"');
+    expect(html).toContain("data-md-editor");
   });
 
   it("renders session flash markup the client countdown can arm", async () => {

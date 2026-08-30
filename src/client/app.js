@@ -4,6 +4,7 @@ import {
   initPushSubscription,
   resetAppBadgeContext,
 } from "./push-subscription.js";
+import { initMarkdownEditors } from "./markdown-editor.js";
 import {
   initSocketFeed,
   applyCounterUpdate,
@@ -207,12 +208,9 @@ document.addEventListener("click", async (event) => {
   const readMore = event.target.closest(".read-more");
   if (readMore) {
     const container = readMore.closest("[data-expandable]");
-    const short = container?.querySelector("[data-short]");
-    const full = container?.querySelector("[data-full]");
-    if (!short || !full) return;
+    if (!container) return;
     const expanded = readMore.getAttribute("aria-expanded") === "true";
-    short.hidden = !expanded;
-    full.hidden = expanded;
+    container.classList.toggle("is-collapsed", expanded);
     readMore.textContent = expanded ? "Read the rest" : "Show less";
     readMore.setAttribute("aria-expanded", String(!expanded));
     if (!reducedMotion)
@@ -408,6 +406,7 @@ if (changelogGroups && changelogGroupTemplate) {
   syncSectionControls();
 }
 
+initMarkdownEditors();
 initSocketFeed();
 initPushSubscription({
   csrfToken,

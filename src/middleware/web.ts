@@ -1,6 +1,7 @@
 import { randomBytes, timingSafeEqual } from "node:crypto";
 import type { NextFunction, Request, Response } from "express";
 import { vapidPublicKey } from "../config/env.js";
+import { renderMarkdown } from "../markdown/render.js";
 import { findSafeUserById, touchUserPresence } from "../services/auth.js";
 
 const presenceTouchIntervalMs = 60_000;
@@ -51,6 +52,7 @@ export async function webLocals(
       hour: "numeric",
       minute: "2-digit",
     }).format(date);
+  res.locals.renderMarkdown = renderMarkdown;
   next();
 }
 

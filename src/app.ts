@@ -66,7 +66,7 @@ export function createApp() {
             defaultSrc: ["'self'"],
             scriptSrc: ["'self'"],
             styleSrc: ["'self'"],
-            imgSrc: ["'self'", "data:"],
+            imgSrc: ["'self'", "data:", "https:"],
             fontSrc: ["'self'"],
             connectSrc: ["'self'"],
             workerSrc: ["'self'"],

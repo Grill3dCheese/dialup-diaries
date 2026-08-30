@@ -65,10 +65,10 @@
       </a>
       <div class="composer__body">
         <label for="content">What's happening in your corner?</label>
-        <textarea id="content" name="content" rows="3" maxlength="5000" required placeholder="Share a thought, a tiny victory, or a link worth keeping…" data-composer></textarea>
+        <textarea id="content" name="content" rows="3" maxlength="5000" required placeholder="Share a thought, a tiny victory, or a link worth keeping…" data-composer data-md-editor></textarea>
         <% if (composeError) { %><p class="form-error"><%= composeError %></p><% } %>
         <div class="composer__footer">
-          <span><span aria-hidden="true">✎</span> Plain text. Real feelings.</span>
+          <span><span aria-hidden="true">✎</span> Markdown, if you like. Real feelings.</span>
           <span class="character-count" data-character-count>0 / 5,000</span>
           <button class="button button--primary" type="submit">Publish post <span aria-hidden="true">↗</span></button>
         </div>

@@ -24,7 +24,7 @@
       </div>
       <div>
         <label for="body">Leave a thoughtful reply</label>
-        <textarea id="body" name="body" rows="3" maxlength="1000" placeholder="Add something to the conversation…" required></textarea>
+        <textarea id="body" name="body" rows="3" maxlength="1000" placeholder="Add something to the conversation…" required data-md-editor></textarea>
         <% if (error) { %><p class="form-error"><%= error %></p><% } %>
         <button class="button button--primary" type="submit">Sign the guestbook</button>
       </div>
@@ -47,7 +47,7 @@
         </a>
         <div>
           <header><a href="/u/<%= comment.username %>"><strong><%= comment.displayName %></strong></a> <span>@<%= comment.username %></span><time><%= formatDate(comment.createdAt) %></time></header>
-          <p><%= comment.body %></p>
+          <div class="markdown-body"><%- renderMarkdown(comment.body) %></div>
         </div>
       </article>
       <% }) %>

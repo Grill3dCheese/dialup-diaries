@@ -228,7 +228,7 @@ describe("live counter and guestbook payload guards", () => {
     expect(count.textContent).toBe("2");
   });
 
-  it("keeps guestbook injects on textContent and never innerHTML", () => {
+  it("routes live post and guestbook bodies through the markdown renderer", () => {
     const source = readFileSync(
       path.resolve("src/client/socket-feed.js"),
       "utf8",
@@ -238,8 +238,11 @@ describe("live counter and guestbook payload guards", () => {
     expect(source).toContain("data-counter");
     expect(source).toContain("checkVisibility");
     expect(source).toContain("is-live-entry");
-    expect(source).toContain("textContent = payload.message");
-    expect(source).not.toContain("innerHTML");
+    expect(source).toContain("setMarkdownContent");
+    expect(source).toContain('className = "markdown-body"');
+    expect(source).not.toMatch(/innerHTML\s*=/);
+    expect(source).not.toContain("textContent = payload.message");
+    expect(source).not.toContain("textContent = content");
   });
 });
 
