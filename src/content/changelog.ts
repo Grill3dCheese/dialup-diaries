@@ -66,6 +66,85 @@ export function defaultChangelogEditorGroups() {
 
 export const seedChangelog = [
   {
+    version: "0.11.0",
+    title: "format.exe is online",
+    date: "2026-08-30",
+    summary:
+      "Posts and guestbook replies can now be written in Markdown. A tiny format.exe toolbar sits on the composer—Write, Preview, and a row of chunky buttons—while the original source is still what gets saved. Existing notes, including ones that arrive live, render the same way. Raw HTML and sneaky scripts do not.",
+    groups: [
+      {
+        kind: "added",
+        label: "New on the web",
+        items: [
+          "The timeline composer and every guestbook reply now open with format.exe: a Write tab, a Preview tab, and a compact row of formatting buttons.",
+          "Preview paints a live rendering of the current draft. Switching tabs never mutates what you typed, and an empty box says so instead of inventing content.",
+          "Posts and guestbook entries already in the archive now render as Markdown—headings, lists, quotes, code, links, and images—without turning a short diary note into a magazine spread.",
+          "Fresh posts and guestbook signatures that arrive while you are watching still go through the same renderer. A live insert is not trusted just because it came from our socket.",
+        ],
+      },
+      {
+        kind: "added",
+        label: "How to drive format.exe",
+        items: [
+          "format.exe is nostalgic chrome around a normal textarea, not a what-you-see-is-what-you-get editor. You still write Markdown; the buttons drop in the punctuation, then hand the cursor back so you can keep typing.",
+          "WRITE is the drafting tab. Everything typed there is the source that gets published and stored. PREVIEW shows a sanitized rendering of that draft without changing a single character of it.",
+          "Click a button with a selection to wrap or prefix those words. With nothing selected, a placeholder is inserted and highlighted so you can type over it immediately. Keyboard and mouse both work; hover is never required.",
+          "B (Bold) wraps the selection in **double asterisks**, like **this**. Click B again on already-bold text to unwrap it.",
+          "I (Italic) wraps the selection in *single asterisks*, like *this*. Same toggle: click I again to peel the markers off.",
+          "S (Strikethrough) wraps the selection in ~~tildes~~, like ~~this~~. Handy for a crossed-out afterthought you still want people to read.",
+          "H (Heading) prefixes the current line with # and a space. Select several lines to mark them all. Click H again to remove the hashes. Deeper headings (##, ###) can be typed by hand.",
+          "• (Bullet list) prefixes each selected line with a dash and a space. Blank lines in the selection are left alone. Click it again to remove those dashes. Nested bullets are typed with spaces, not this button.",
+          "1. (Numbered list) prefixes selected lines with 1. 2. 3. in order. Click again to remove the numbers. Nested numbering is also typed with leading spaces, not this button.",
+          "“ (Quote) prefixes each selected line with > and a space. A nested quote is >> typed by hand. Click the button again to unwrap.",
+          "</> (Inline code) wraps the selection in single backticks, like `this`. Best for a short command, handle, or filename inside a sentence.",
+          "{ } (Code block) wraps the selection in a fenced block: three backticks on the line above and the line below. Long snippets scroll inside the box. The code is shown, never run.",
+          "URL (Link) turns the selection into [selected text](https://example.com) and highlights the address so you can paste a real one. If the selection already looks like a URL, it becomes [link text](that-url) and highlights the words instead.",
+          "— (Horizontal rule) inserts a --- divider with blank lines around it. Useful for splitting a long note into scenes without starting a new post.",
+          "CLR (Clear formatting) peels Markdown markers off the selection only—asterisks, hashes, list prefixes, fences, and link wrappers—leaving the plain words. It never touches the rest of the draft.",
+          "If Preview hiccups, hop back to Write. The draft is still there, cursor and all. Publishing always sends the Write-tab Markdown, never the generated HTML.",
+        ],
+      },
+      {
+        kind: "added",
+        label: "Markdown, if you like",
+        items: [
+          "A single Enter becomes a line break inside a paragraph, which is handy for a short stanza. A blank line starts a new paragraph. Leave a blank line before and after a list if the next paragraph should sit outside it.",
+          "Headings: start a line with # and a space for the largest title, ## for a section, ### for a subsection. Deeper hashes still work, but they are capped at ### size so a diary note does not become a billboard.",
+          "Emphasis stacks. **bold**, *italic*, and ~~struck~~ can nest, like ***bold italic***, and they work the same way inside a list item or a quote.",
+          "Nested bullets: put two or more spaces in front of the dash so the item becomes a child of the line above. Write - chores then, on the next line, two spaces, a dash, a space, and laundry. That laundry line hangs under chores.",
+          "Nested numbers work the same way: two or more spaces before 1. nests that item. Mix them freely—a numbered list can hold indented dashes, and a dashed list can hold indented 1. 2. 3. children.",
+          "Deeper nests need more indent. A child of a two-space item usually wants four spaces, and so on. The bullet and number buttons always prefix at the current line; type the extra spaces yourself when you want a sub-list.",
+          "Links look like [visible words](https://example.com). Images look like ![a short description](https://example.com/cat.gif). Only http and https pictures load; they shrink to fit and never stretch the page sideways.",
+          "Quotes start with > and a space at the beginning of the line. Nested quotes use >>. A quote can contain lists, links, and emphasis, so a cited recipe or lyric can still be structured.",
+          "Inline code uses one backtick on each side. A fenced block uses three backticks on their own lines around the snippet. You can label the opening fence (for example ```js) for your own notes; the site still just displays the text.",
+          "Tables use pipes: a header row, a separator row of dashes, then the data. A wide table scrolls inside the post instead of shoving the timeline sideways.",
+          "Type HTML if you want, but it will not render. Tags, scripts, iframes, and javascript: links are stripped so a guestbook cannot execute code in someone else's browser.",
+          "Long URLs wrap instead of stretching the page. Huge images shrink. A very long code line scrolls inside its box. The surrounding post chrome stays put.",
+        ],
+      },
+      {
+        kind: "changed",
+        label: "Polished pixels",
+        items: [
+          "The composer is still a textarea. format.exe is a small piece of late-90s web chrome—chunky buttons, a window title, Write and Preview tabs—not a modern rich-text ribbon.",
+          "Long posts still tuck behind Read the rest, but the fold is visual now so a heading or list is not sliced in half mid-marker.",
+          "On a pocket-sized screen the toolbar wraps onto extra rows instead of overflowing. Touch targets stay chunky; the preview box stays inside the post.",
+        ],
+      },
+      {
+        kind: "security",
+        label: "Under the hood",
+        items: [
+          "PostgreSQL still stores the original Markdown. Generated HTML is never the canonical copy, so a later render can always start from the source.",
+          "One pipeline serves first paint, Preview, and live Socket.io inserts: parse with marked, sanitize with DOMPurify, then put only the cleaned HTML in the page.",
+          "Raw HTML inside Markdown is discarded at parse time. Scripts, iframes, event handlers, javascript: and data: URLs, and SVG tricks are stripped by an allowlist sanitizer.",
+          "External links open in a new tab with rel noopener noreferrer nofollow. Images only load from http or https, lazily, and without sending a referrer.",
+          "If parsing fails, the note falls back to escaped plain text. The feed does not crash, and unsanitized HTML never reaches the DOM.",
+        ],
+      },
+    ],
+  },
+  {
     version: "0.10.0",
     title: "The counters learned to travel in packs",
     date: "2026-08-29",

@@ -4,6 +4,7 @@ import {
   formatReleaseDate,
   seedChangelog,
 } from "../src/content/changelog.js";
+import { changelogReleaseSchema } from "../src/utils/validation.js";
 
 describe("changelog content", () => {
   it("uses unique semantic versions in newest-first order", () => {
@@ -15,7 +16,7 @@ describe("changelog content", () => {
     expect(versions).toEqual(
       [...versions].sort(compareSemanticVersions).reverse(),
     );
-    expect(versions[0]).toBe("0.10.0");
+    expect(versions[0]).toBe("0.11.0");
   });
 
   it("keeps every release detailed and machine-readable", () => {
@@ -26,6 +27,23 @@ describe("changelog content", () => {
       expect(release.groups.every((group) => group.items.length > 0)).toBe(
         true,
       );
+    }
+  });
+
+  it("fits the filed-transmission schema so every seed note actually renders", () => {
+    for (const release of seedChangelog) {
+      const parsed = changelogReleaseSchema.safeParse({
+        version: release.version,
+        title: release.title,
+        releasedOn: release.date,
+        summary: release.summary,
+        groups: release.groups.map((group) => ({
+          kind: group.kind,
+          label: group.label,
+          items: [...group.items],
+        })),
+      });
+      expect(parsed.success, JSON.stringify(parsed.error?.issues)).toBe(true);
     }
   });
 
