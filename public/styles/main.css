@@ -871,11 +871,46 @@ textarea:focus {
   color: var(--muted);
   font-size: 9px;
 }
-.composer__footer .button {
+.composer__publish {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   margin-left: auto;
 }
 .character-count {
   font-family: "Courier New", monospace;
+}
+.submit-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--muted);
+  font-family: "Courier New", monospace;
+  font-size: 9px;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  user-select: none;
+}
+.submit-hint__key {
+  display: inline-block;
+  border-color: #efe6cf #8a8374 #8a8374 #efe6cf;
+  border-style: solid;
+  border-width: 1px;
+  border-radius: 2px;
+  padding: 1px 5px 0;
+  background: #fffaf0;
+  box-shadow:
+    inset 1px 1px 0 #fff,
+    1px 1px 0 #5c564c;
+  color: var(--ink);
+  font-family: "Courier New", monospace;
+  font-size: 8px;
+  font-weight: 700;
+  line-height: 1.35;
+  text-transform: uppercase;
+}
+.submit-hint__plus {
+  font-size: 8px;
 }
 
 /* Posts */
@@ -1723,7 +1758,10 @@ textarea:focus {
   font-family: Georgia, serif;
   font-weight: 700;
 }
-.comment-form .button {
+.comment-form__actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   margin-top: 8px;
 }
 .sign-in-prompt {
@@ -2576,6 +2614,14 @@ html.theme-changing body {
   border-color: #ff6f91;
   background: #2a111b;
 }
+[data-theme="dark"] .submit-hint__key {
+  border-color: #4a3f5c #120e18 #120e18 #4a3f5c;
+  background: #1b1524;
+  box-shadow:
+    inset 1px 1px 0 #3a3148,
+    1px 1px 0 #08070d;
+  color: #efe8ff;
+}
 [data-theme="dark"] .flash--success,
 [data-theme="dark"] .flash-success {
   --flash-progress-color: #00c853;
@@ -3273,6 +3319,9 @@ html.theme-changing body {
   .composer__footer > span:first-child {
     display: none;
   }
+  .submit-hint {
+    display: none;
+  }
   .md-toolbar__app {
     width: 100%;
     margin: 0 0 2px;
@@ -3347,6 +3396,11 @@ html.theme-changing body {
     display: block;
     float: none;
     margin-left: 0;
+  }
+}
+@media (pointer: coarse) {
+  .submit-hint {
+    display: none;
   }
 }
 @media (prefers-reduced-motion: reduce) {

@@ -5,6 +5,7 @@ import {
   resetAppBadgeContext,
 } from "./push-subscription.js";
 import { initMarkdownEditors } from "./markdown-editor.js";
+import { initKeyboardSubmit } from "./keyboard-submit.js";
 import {
   initSocketFeed,
   applyCounterUpdate,
@@ -407,6 +408,7 @@ if (changelogGroups && changelogGroupTemplate) {
 }
 
 initMarkdownEditors();
+initKeyboardSubmit();
 initSocketFeed();
 initPushSubscription({
   csrfToken,

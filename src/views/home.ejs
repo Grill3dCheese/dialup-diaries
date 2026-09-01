@@ -70,7 +70,10 @@
         <div class="composer__footer">
           <span><span aria-hidden="true">✎</span> Markdown, if you like. Real feelings.</span>
           <span class="character-count" data-character-count>0 / 5,000</span>
-          <button class="button button--primary" type="submit">Publish post <span aria-hidden="true">↗</span></button>
+          <span class="composer__publish">
+            <%- include('partials/submit-hint') %>
+            <button class="button button--primary" type="submit">Publish post <span aria-hidden="true">↗</span></button>
+          </span>
         </div>
       </div>
     </form>

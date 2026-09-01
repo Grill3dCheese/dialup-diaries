@@ -26,7 +26,10 @@
         <label for="body">Leave a thoughtful reply</label>
         <textarea id="body" name="body" rows="3" maxlength="1000" placeholder="Add something to the conversation…" required data-md-editor></textarea>
         <% if (error) { %><p class="form-error"><%= error %></p><% } %>
-        <button class="button button--primary" type="submit">Sign the guestbook</button>
+        <div class="comment-form__actions">
+          <button class="button button--primary" type="submit">Sign the guestbook</button>
+          <%- include('../partials/submit-hint') %>
+        </div>
       </div>
     </form>
     <% } else { %>

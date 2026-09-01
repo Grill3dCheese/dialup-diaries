@@ -170,6 +170,11 @@ describe("server-rendered pages", () => {
     expect(pages[1]).toContain('data-entry-id="1"');
     expect(pages[0]).toContain("markdown-body");
     expect(pages[0]).toContain("data-md-editor");
+    expect(pages[0]).toContain("data-submit-hint");
+    expect(pages[0]).toContain("data-submit-mod");
+    expect(pages[1]).toContain("data-submit-hint");
+    expect(pages[3]).not.toContain("data-submit-hint");
+    expect(pages[4]).not.toContain("data-submit-hint");
     expect(pages[0]).toContain("Hello from my corner of the web.");
     expect(pages[1]).toContain("data-md-editor");
     expect(pages[0]).toMatch(
