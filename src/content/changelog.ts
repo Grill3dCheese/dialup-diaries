@@ -66,6 +66,53 @@ export function defaultChangelogEditorGroups() {
 
 export const seedChangelog = [
   {
+    version: "0.12.0",
+    title: "Ctrl+Enter hangs up the form",
+    date: "2026-08-31",
+    summary:
+      "If you are already typing in a form, Ctrl+Enter (or ⌘ Enter on a Mac) now submits it the same way the real Submit button would. Enter by itself still makes a new line in Markdown. Sign out and delete stay off the shortcut on purpose.",
+    groups: [
+      {
+        kind: "added",
+        label: "New on the web",
+        items: [
+          "Sign in, register, the timeline composer, guestbook replies, your profile, and the webmaster desk can all be sent with Ctrl+Enter or ⌘ Enter while the cursor is in a field.",
+          "The shortcut presses the form’s normal primary button. Validation, loading, CSRF, flashes, and Socket.io behavior are the same as a click.",
+          "The composer and guestbook show a tiny [Ctrl] + [Enter] keycap hint next to Publish and Sign the guestbook. On a Mac the first key reads ⌘. Pocket-sized and touch-first screens hide the hint so it does not clutter the footer.",
+        ],
+      },
+      {
+        kind: "added",
+        label: "How to drive the handshake",
+        items: [
+          "Focus a field in the form you mean to send, then hold Control (Windows/Linux) or Command (Mac) and press Enter. The form attached to that field is the only one that submits—never the first form on the page, and never a reply next door.",
+          "In a textarea, including format.exe, a plain Enter still starts a new line. Ctrl+Enter or ⌘ Enter is what sends. Cursor position, a selection, and a multi-line draft do not change that.",
+          "If a required field is empty, the shortcut shows the same browser message as clicking Submit. It does not invent a second validation path.",
+          "format.exe stays out of the way: Bold, Italic, and the other toolbar buttons still drop in Markdown. Write still writes. Preview still previews. Focusing a toolbar button, a Write/Preview tab, or the Preview pane does not submit the form.",
+          "Holding the shortcut does not fire three requests. A disabled Submit button still means the form is not available.",
+        ],
+      },
+      {
+        kind: "changed",
+        label: "Polished pixels",
+        items: [
+          "The keycaps use the same inset/outset chrome as the rest of the 1990s desk—small Courier labels, not a modern shortcut overlay.",
+          "Clicking Submit, tabbing to the button, and pressing Enter in a single-line field all still work. The shortcut is extra, not a replacement.",
+        ],
+      },
+      {
+        kind: "security",
+        label: "Under the hood",
+        items: [
+          "One document keydown listener watches for the combo after page load, so a guestbook form that appears later still inherits it. There is no per-form listener to leak.",
+          "The listener asks the focused control for its native form, then calls requestSubmit on that form’s primary Submit button. form.submit() is not used, so HTML constraint validation and existing submit handlers still run.",
+          "Sign out, Delete this post, and Delete this transmission are excluded. The shortcut will not pick a destructive button just because it is nearby.",
+          "Alt and Shift stay out of the combo so an AltGr Enter on an international keyboard is not stolen. The keys that decide the shortcut are the browser’s ctrlKey and metaKey, not a user-agent guess.",
+        ],
+      },
+    ],
+  },
+  {
     version: "0.11.0",
     title: "format.exe is online",
     date: "2026-08-30",
