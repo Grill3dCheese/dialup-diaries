@@ -116,6 +116,7 @@ export function createApp() {
         tableName: "user_sessions",
         createTableIfMissing: false,
         pruneSessionInterval: 60 * 15,
+        ttl: 60 * 60 * 24 * 7,
       }),
       secret: env.SESSION_SECRET,
       resave: false,
@@ -125,7 +126,7 @@ export function createApp() {
         httpOnly: true,
         secure: isProduction,
         sameSite: "lax",
-        maxAge: 1000 * 60 * 60 * 24 * 14,
+        maxAge: 1000 * 60 * 30,
       },
     }),
   );
