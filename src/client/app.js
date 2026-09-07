@@ -13,9 +13,10 @@ import {
 } from "./socket-feed.js";
 import {
   applyTheme,
+  applyThemePreference,
+  normalizeThemePreference,
   readStoredTheme,
   resolveTheme,
-  systemTheme,
   themeStorageKey,
   writeStoredTheme,
 } from "./theme.js";
@@ -27,89 +28,197 @@ const csrfToken =
   document.querySelector('meta[name="csrf-token"]')?.content ?? "";
 const themeToggle = document.querySelector("[data-theme-toggle]");
 const colorSchemeQuery = window.matchMedia("(prefers-color-scheme: dark)");
+const themePreferenceOrder = ["light", "system", "dark"];
+const themeSoundUrls = {
+  light: "/sounds/lightTheme.mp3",
+  system: "/sounds/systemTheme.mp3",
+  dark: "/sounds/darkTheme.mp3",
+};
+const themeSoundPlayers = new Map();
+let activeThemeSound = null;
 
 if (themeToggle) {
-  syncThemeToggle(document.documentElement.dataset.theme || systemTheme());
-  themeToggle.addEventListener("click", () => {
-    const currentTheme =
-      document.documentElement.dataset.theme === "dark" ? "dark" : "light";
-    const nextTheme = currentTheme === "dark" ? "light" : "dark";
-    playThemeSwitchSound(nextTheme);
-    switchTheme(nextTheme, true);
+  syncThemeToggle(currentThemePreference());
+  themeToggle.querySelectorAll("[data-theme-option]").forEach((option) => {
+    option.addEventListener("click", () => {
+      chooseThemePreference(option.dataset.themeOption);
+    });
+  });
+  themeToggle.addEventListener("keydown", (event) => {
+    if (!event.target.closest("[data-theme-option]")) return;
+    const nextPreference = preferenceFromKey(event.key);
+    if (!nextPreference) return;
+    event.preventDefault();
+    const nextOption = themeToggle.querySelector(
+      `[data-theme-option="${nextPreference}"]`,
+    );
+    nextOption?.focus();
+    chooseThemePreference(nextPreference);
   });
 }
 
-colorSchemeQuery.addEventListener("change", (event) => {
-  if (readStoredTheme() === "light" || readStoredTheme() === "dark") return;
-  switchTheme(event.matches ? "dark" : "light", false);
+colorSchemeQuery.addEventListener("change", () => {
+  if (normalizeThemePreference(readStoredTheme()) !== "system") return;
+  switchThemePreference("system", false);
 });
 
 window.addEventListener("storage", (event) => {
   if (event.key !== themeStorageKey) return;
-  switchTheme(resolveTheme(event.newValue, colorSchemeQuery.matches), false);
+  switchThemePreference(normalizeThemePreference(event.newValue), false);
 });
 
-function switchTheme(theme, persist) {
+function currentThemePreference() {
+  return normalizeThemePreference(
+    document.documentElement.dataset.themePreference || readStoredTheme(),
+  );
+}
+
+function preferenceFromKey(key) {
+  const currentIndex = themePreferenceOrder.indexOf(currentThemePreference());
+  if (key === "Home") return themePreferenceOrder[0];
+  if (key === "End") return themePreferenceOrder[2];
+  if (key === "ArrowLeft" || key === "ArrowUp") {
+    return themePreferenceOrder[
+      (currentIndex + themePreferenceOrder.length - 1) %
+        themePreferenceOrder.length
+    ];
+  }
+  if (key === "ArrowRight" || key === "ArrowDown") {
+    return themePreferenceOrder[
+      (currentIndex + 1) % themePreferenceOrder.length
+    ];
+  }
+  return null;
+}
+
+function chooseThemePreference(preference) {
+  const nextPreference = normalizeThemePreference(preference);
+  if (nextPreference === currentThemePreference()) return;
+  playThemeSwitchSound(nextPreference);
+  switchThemePreference(nextPreference, true);
+  animateThemeIcons(nextPreference);
+}
+
+function switchThemePreference(preference, persist) {
+  const nextPreference = normalizeThemePreference(preference);
+  const resolved = resolveTheme(nextPreference, colorSchemeQuery.matches);
+  const currentResolved =
+    document.documentElement.dataset.theme === "dark" ? "dark" : "light";
+  const resolvedChanged = resolved !== currentResolved;
+
   const update = () => {
-    applyTheme(theme);
-    if (persist) writeStoredTheme(theme);
-    syncThemeToggle(theme);
+    applyTheme(resolved);
+    applyThemePreference(nextPreference);
+    if (persist) writeStoredTheme(nextPreference);
+    syncThemeToggle(nextPreference);
   };
 
-  if (!reducedMotion && document.startViewTransition) {
+  if (resolvedChanged && !reducedMotion && document.startViewTransition) {
     document.startViewTransition(update);
   } else {
-    if (!reducedMotion)
+    if (resolvedChanged && !reducedMotion) {
       document.documentElement.classList.add("theme-changing");
+    }
     update();
-    window.setTimeout(
-      () => document.documentElement.classList.remove("theme-changing"),
-      320,
-    );
-  }
-
-  if (!reducedMotion && themeToggle) {
-    animate(
-      themeToggle,
-      { scale: [1, 0.9, 1.08, 1], rotate: [0, -4, 3, 0] },
-      { duration: 0.38 },
-    );
+    if (resolvedChanged) {
+      window.setTimeout(
+        () => document.documentElement.classList.remove("theme-changing"),
+        320,
+      );
+    }
   }
 }
 
-function syncThemeToggle(theme) {
+function syncThemeToggle(preference) {
   if (!themeToggle) return;
-  const isDark = theme === "dark";
-  const label = isDark ? "Switch to light mode" : "Switch to dark mode";
-  themeToggle.setAttribute("aria-pressed", String(isDark));
-  themeToggle.setAttribute("aria-label", label);
-  themeToggle.title = label;
+  const nextPreference = normalizeThemePreference(preference);
+  themeToggle.querySelectorAll("[data-theme-option]").forEach((option) => {
+    const selected = option.dataset.themeOption === nextPreference;
+    option.setAttribute("aria-checked", String(selected));
+    option.tabIndex = selected ? 0 : -1;
+  });
 }
 
-let themeAudioContext;
+function animateThemeIcons(preference) {
+  if (reducedMotion || !themeToggle) return;
+  const iconClass =
+    preference === "light"
+      ? ".theme-toggle__sun"
+      : preference === "dark"
+        ? ".theme-toggle__moon"
+        : ".theme-toggle__system";
+  const icon = themeToggle.querySelector(iconClass);
+  if (!icon) return;
 
-function playThemeSwitchSound(theme) {
-  const AudioContext = window.AudioContext ?? window.webkitAudioContext;
-  if (!AudioContext) return;
-  themeAudioContext ??= new AudioContext();
-  void themeAudioContext.resume();
+  if (preference === "light") {
+    animate(
+      icon,
+      { rotate: [0, 28, 0], scale: [1, 1.14, 1] },
+      { duration: 0.36 },
+    );
+    return;
+  }
+  if (preference === "dark") {
+    animate(
+      icon,
+      { rotate: [0, -20, 8, 0], scale: [1, 1.1, 1] },
+      { duration: 0.4 },
+    );
+    return;
+  }
+  animate(
+    icon,
+    { scale: [1, 1.08, 1], y: [0, -1.5, 0] },
+    { duration: 0.32 },
+  );
+}
 
-  const start = themeAudioContext.currentTime;
-  const frequencies = theme === "light" ? [420, 880] : [720, 190];
-  frequencies.forEach((frequency, index) => {
-    const oscillator = themeAudioContext.createOscillator();
-    const gain = themeAudioContext.createGain();
-    const offset = index * 0.035;
-    oscillator.type = "square";
-    oscillator.frequency.setValueAtTime(frequency, start + offset);
-    gain.gain.setValueAtTime(0.0001, start + offset);
-    gain.gain.exponentialRampToValueAtTime(0.028, start + offset + 0.004);
-    gain.gain.exponentialRampToValueAtTime(0.0001, start + offset + 0.035);
-    oscillator.connect(gain);
-    gain.connect(themeAudioContext.destination);
-    oscillator.start(start + offset);
-    oscillator.stop(start + offset + 0.04);
-  });
+function playThemeSwitchSound(preference) {
+  const url = themeSoundUrls[preference];
+  if (!url) return;
+
+  try {
+    if (activeThemeSound) {
+      activeThemeSound.pause();
+      try {
+        activeThemeSound.currentTime = 0;
+      } catch {
+        // Some browsers reject seeking before the previous file is ready.
+      }
+    }
+
+    let player = themeSoundPlayers.get(preference);
+    if (!player) {
+      player = new Audio(url);
+      player.preload = "auto";
+      themeSoundPlayers.set(preference, player);
+    }
+
+    try {
+      player.currentTime = 0;
+    } catch {
+      // Ignore seek errors and still attempt playback.
+    }
+    activeThemeSound = player;
+    const playback = player.play();
+    if (playback && typeof playback.catch === "function") {
+      playback.catch(() => undefined);
+    }
+    warmRemainingThemeSounds(preference);
+  } catch {
+    // Audio must never prevent the theme from changing.
+  }
+}
+
+function warmRemainingThemeSounds(playedPreference) {
+  for (const [preference, url] of Object.entries(themeSoundUrls)) {
+    if (preference === playedPreference || themeSoundPlayers.has(preference)) {
+      continue;
+    }
+    const player = new Audio(url);
+    player.preload = "auto";
+    themeSoundPlayers.set(preference, player);
+  }
 }
 
 const changelogReleases = [

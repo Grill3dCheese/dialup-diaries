@@ -137,7 +137,12 @@ describe("server-rendered pages", () => {
       expect(html).toContain("Dialup Diaries");
       expect(html).toContain('<script src="/theme-init.js"></script>');
       expect(html).toContain("data-theme-toggle");
-      expect(html).toContain('aria-label="Toggle color theme"');
+      expect(html).toContain('aria-label="Color theme"');
+      expect(html).toContain('role="radiogroup"');
+      expect(html).toContain('data-theme-option="light"');
+      expect(html).toContain('data-theme-option="system"');
+      expect(html).toContain('data-theme-option="dark"');
+      expect(html).not.toContain("Toggle color theme");
       expect(html).toContain("data-push-toggle");
       expect(html).toContain("PAGER OFF");
       expect(html).toContain("data-pager-hint");

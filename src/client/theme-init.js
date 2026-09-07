@@ -1,3 +1,12 @@
-import { applyTheme, readStoredTheme, resolveTheme, systemTheme } from "./theme.js";
+import {
+  applyTheme,
+  applyThemePreference,
+  normalizeThemePreference,
+  readStoredTheme,
+  resolveTheme,
+  systemTheme,
+} from "./theme.js";
 
-applyTheme(resolveTheme(readStoredTheme(), systemTheme() === "dark"));
+const preference = normalizeThemePreference(readStoredTheme());
+applyTheme(resolveTheme(preference, systemTheme() === "dark"));
+applyThemePreference(preference);

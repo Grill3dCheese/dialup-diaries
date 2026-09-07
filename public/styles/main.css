@@ -220,71 +220,102 @@ svg {
   margin: 0;
 }
 .theme-toggle {
-  display: inline-grid;
-  min-width: 44px;
-  min-height: 44px;
-  margin-left: 3px;
-  border: 0;
-  border-radius: 999px;
-  padding: 7px 3px;
-  place-items: center;
-  background: transparent;
-  color: var(--ink);
-}
-.theme-toggle:hover {
-  background: #f4eedf;
-}
-.theme-toggle__track {
   position: relative;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  width: 52px;
-  height: 28px;
-  align-items: center;
+  display: inline-grid;
+  flex-shrink: 0;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: stretch;
+  width: 108px;
+  height: 40px;
+  margin-left: 3px;
+  padding: 2px;
+  isolation: isolate;
   border: 1px solid var(--ink);
   border-radius: 999px;
   background: #e9e2d3;
   box-shadow:
     inset 2px 2px 0 rgba(32, 32, 51, 0.1),
     2px 2px 0 var(--yellow);
-  overflow: hidden;
-}
-.theme-toggle svg {
-  position: relative;
-  z-index: 1;
-  width: 15px;
-  justify-self: center;
-  transition:
-    color 180ms ease,
-    transform 260ms cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-.theme-toggle__moon {
-  color: var(--purple);
-}
-.theme-toggle__sun {
-  color: #775e00;
+  color: var(--ink);
 }
 .theme-toggle__thumb {
   position: absolute;
   z-index: 0;
   top: 2px;
   left: 2px;
-  width: 22px;
-  height: 22px;
+  width: calc((100% - 4px) / 3);
+  height: calc(100% - 4px);
   border: 1px solid var(--ink);
   border-radius: 50%;
   background: var(--paper);
-  box-shadow: 1px 1px 0 rgba(32, 32, 51, 0.2);
-  transform: translateX(24px);
+  box-shadow:
+    1px 1px 0 rgba(32, 32, 51, 0.18),
+    0 0 8px rgba(33, 164, 154, 0.28);
+  pointer-events: none;
+  transform: translateX(100%);
   transition:
-    transform 260ms cubic-bezier(0.2, 0.8, 0.2, 1),
-    background-color 180ms ease;
+    transform 280ms cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 180ms ease,
+    box-shadow 180ms ease;
 }
-[data-theme="light"] .theme-toggle__moon {
-  transform: rotate(-18deg) scale(0.82);
+html[data-theme-preference="light"] .theme-toggle__thumb {
+  box-shadow:
+    1px 1px 0 rgba(32, 32, 51, 0.18),
+    0 0 8px rgba(248, 216, 76, 0.45);
+  transform: translateX(0);
 }
-[data-theme="light"] .theme-toggle__sun {
-  transform: rotate(28deg) scale(1.08);
+html[data-theme-preference="dark"] .theme-toggle__thumb {
+  box-shadow:
+    1px 1px 0 rgba(32, 32, 51, 0.18),
+    0 0 8px rgba(102, 82, 163, 0.38);
+  transform: translateX(200%);
+}
+.theme-toggle__option {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  min-width: 0;
+  height: 100%;
+  padding: 0;
+  place-items: center;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+}
+.theme-toggle__option svg {
+  display: block;
+  width: 15px;
+  height: 15px;
+  pointer-events: none;
+  opacity: 0.48;
+  overflow: visible;
+  transition:
+    color 180ms ease,
+    opacity 180ms ease,
+    filter 180ms ease;
+}
+.theme-toggle__sun {
+  color: #775e00;
+}
+.theme-toggle__system {
+  color: var(--teal-dark);
+}
+.theme-toggle__moon {
+  color: var(--purple);
+}
+html[data-theme-preference="light"] .theme-toggle__sun,
+html[data-theme-preference="system"] .theme-toggle__system,
+html[data-theme-preference="dark"] .theme-toggle__moon {
+  opacity: 1;
+  filter: drop-shadow(0 0 3px currentColor);
+}
+.theme-toggle__option:hover svg,
+.theme-toggle__option:focus-visible svg {
+  opacity: 1;
+}
+.theme-toggle__option:focus-visible {
+  outline-offset: 2px;
 }
 .status-strip {
   display: flex;
@@ -2545,8 +2576,7 @@ html.theme-changing body {
 }
 [data-theme="dark"] .main-nav a:hover,
 [data-theme="dark"] .nav-button:hover,
-[data-theme="dark"] .main-nav .is-current,
-[data-theme="dark"] .theme-toggle:hover {
+[data-theme="dark"] .main-nav .is-current {
   background: #211b2c;
 }
 [data-theme="dark"] .open-book-icon,
@@ -2564,7 +2594,7 @@ html.theme-changing body {
 [data-theme="dark"] .button--primary:hover {
   box-shadow: 5px 5px 0 var(--teal-dark);
 }
-[data-theme="dark"] .theme-toggle__track {
+[data-theme="dark"] .theme-toggle {
   background: #18131f;
   box-shadow:
     inset 2px 2px 0 rgba(0, 0, 0, 0.7),
@@ -2572,16 +2602,22 @@ html.theme-changing body {
 }
 [data-theme="dark"] .theme-toggle__thumb {
   background: #2c203c;
-  box-shadow: 0 0 10px rgba(200, 92, 255, 0.65);
-  transform: translateX(0);
+  box-shadow: 0 0 10px rgba(53, 245, 154, 0.42);
 }
-[data-theme="dark"] .theme-toggle__moon {
-  color: #f6e9ff;
-  transform: rotate(8deg) scale(1.08);
+html[data-theme="dark"][data-theme-preference="light"] .theme-toggle__thumb {
+  box-shadow: 0 0 10px rgba(255, 159, 67, 0.55);
+}
+html[data-theme="dark"][data-theme-preference="dark"] .theme-toggle__thumb {
+  box-shadow: 0 0 10px rgba(200, 92, 255, 0.7);
 }
 [data-theme="dark"] .theme-toggle__sun {
   color: var(--yellow);
-  transform: rotate(-24deg) scale(0.82);
+}
+[data-theme="dark"] .theme-toggle__system {
+  color: var(--teal);
+}
+[data-theme="dark"] .theme-toggle__moon {
+  color: #f6e9ff;
 }
 [data-theme="dark"] .status-strip {
   border-top-color: #342a43;
@@ -3151,6 +3187,10 @@ html.theme-changing body {
   }
 }
 @media (max-width: 800px) {
+  .theme-toggle {
+    width: 96px;
+    height: 36px;
+  }
   .page-shell {
     grid-template-columns: minmax(0, 690px);
     width: min(690px, calc(100% - 24px));
@@ -3237,21 +3277,13 @@ html.theme-changing body {
     display: none;
   }
   .theme-toggle {
-    min-width: 40px;
-    min-height: 40px;
+    width: 90px;
+    height: 34px;
     margin-left: 0;
-    padding-inline: 1px;
   }
-  .theme-toggle__track {
-    width: 48px;
-  }
-  .theme-toggle__thumb {
-    width: 20px;
-    height: 20px;
-    transform: translateX(22px);
-  }
-  [data-theme="dark"] .theme-toggle__thumb {
-    transform: translateX(0);
+  .theme-toggle__option svg {
+    width: 13px;
+    height: 13px;
   }
   [data-theme="dark"] .post-card::before {
     width: 48px;
@@ -3401,6 +3433,16 @@ html.theme-changing body {
 @media (pointer: coarse) {
   .submit-hint {
     display: none;
+  }
+}
+@media (max-width: 380px) {
+  .theme-toggle {
+    width: 84px;
+    height: 32px;
+  }
+  .theme-toggle__option svg {
+    width: 12px;
+    height: 12px;
   }
 }
 @media (prefers-reduced-motion: reduce) {
