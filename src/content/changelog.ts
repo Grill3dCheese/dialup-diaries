@@ -66,6 +66,30 @@ export function defaultChangelogEditorGroups() {
 
 export const seedChangelog = [
   {
+    version: "0.12.1",
+    title: "Idle lines hang up on their own",
+    date: "2026-09-06",
+    summary:
+      "Signed-in visits now time out if you wander off, so a forgotten tab does not stay logged in forever. Keep using the guestbook and you stay on the line; step away for a while and you may need to knock again.",
+    groups: [
+      {
+        kind: "changed",
+        label: "Polished pixels",
+        items: [
+          "If you leave Dialup Diaries unattended for a while, you may be asked to sign in again when you come back. Active browsing still keeps the handshake alive.",
+        ],
+      },
+      {
+        kind: "security",
+        label: "Under the hood",
+        items: [
+          "Signed-in sessions now expire after a stretch of inactivity instead of lingering indefinitely.",
+          "Leftover sessions are cleaned up automatically so abandoned logins do not pile up on the server.",
+        ],
+      },
+    ],
+  },
+  {
     version: "0.12.0",
     title: "Ctrl+Enter hangs up the form",
     date: "2026-08-31",
