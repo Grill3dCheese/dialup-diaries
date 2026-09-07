@@ -66,6 +66,42 @@ export function defaultChangelogEditorGroups() {
 
 export const seedChangelog = [
   {
+    version: "0.13.0",
+    title: "The sun, the moon, and the monitor",
+    date: "2026-09-06",
+    summary:
+      "The color theme switch is no longer a two-stop slider. Stay in daylight, follow whatever the computer is wearing, or flip to the neon after-hours look—and the choice is still there after you hang up.",
+    groups: [
+      {
+        kind: "added",
+        label: "New on the web",
+        items: [
+          "A three-option theme selector in the header: Light, System, and Dark. The sun and moon stayed; a little desktop monitor sits between them for System.",
+          "A first visit follows your device or browser color scheme, with System visibly selected even when the page itself looks light or dark.",
+          "Choosing Light, System, or Dark plays a short switch sound recorded for that station, in place of the old synthesized beeps.",
+        ],
+      },
+      {
+        kind: "changed",
+        label: "Polished pixels",
+        items: [
+          "The old two-state slider is a three-station dial. One knob slides between the sun, the monitor, and the moon instead of each option flashing on its own.",
+          "Light and Dark keep that look if the operating system changes later. System keeps following the machine without rewriting your saved preference as Light or Dark.",
+          "The selector stays usable from a 320-pixel pocket screen up through a wide desktop, with keyboard access, named options for screen readers, and reduced-motion support.",
+        ],
+      },
+      {
+        kind: "security",
+        label: "Under the hood",
+        items: [
+          "The saved preference (light, system, or dark) is kept separate from the resolved appearance, so a System visit is not stored as Light or Dark by accident.",
+          "The early theme bootstrap still paints the right sky before the stylesheet loads, including the new System default, so the page does not flash the wrong theme.",
+          "Other tabs still pick up a theme change through the existing storage handshake. Automatic operating-system changes and cross-tab updates do not play a sound.",
+        ],
+      },
+    ],
+  },
+  {
     version: "0.12.1",
     title: "Idle lines hang up on their own",
     date: "2026-09-06",

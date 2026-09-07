@@ -193,6 +193,7 @@ describe("server-rendered pages", () => {
     expect(pages[5]).toContain("Version 0.7.0");
     expect(pages[5]).toContain("Version 0.8.0");
     expect(pages[5]).toContain("Version 0.9.0");
+    expect(pages[5]).toContain("Version 0.13.0");
     expect(pages[5]).toContain("Version 0.12.1");
     expect(pages[5]).toContain("Version 0.12.0");
     expect(pages[5]).toContain("Version 0.11.0");
